@@ -1,0 +1,39 @@
+.block {
+  position: absolute;
+  display: inline-block;
+  cursor: move;
+  user-select: none;
+  touch-action: none; /* Для мобильных устройств */
+  }
+  
+  .blue-block .block_text {
+    color: #fff !important;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  }
+  
+  .red-block .block_text {
+    color: #ffd700;
+    font-weight: bold;
+  }
+  
+  /* Общие стили для всех блоков */
+  .block {
+    position: absolute;
+    display: inline-block;
+    cursor: move;
+    user-select: none;
+    touch-action: none;
+    margin: 10px;
+  }
+  
+  .block_text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    padding: 0 20px;
+    font-family: Arial;
+    font-size: 14px;
+    white-space: nowrap;
+  }
