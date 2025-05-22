@@ -112,7 +112,7 @@ body {
 }
 
 .category[data-category="mouse"] {
-    background-color: rgba(255, 115, 0, 0.6);
+    background-color: rgba(11, 203, 162, 0.6);
 }
 
 .category[data-category="keyboard"] {
@@ -136,37 +136,44 @@ body {
 }
 
 .category[data-category="start"].active {
-    background-color: rgba(255, 115, 0, 0.4);
+    background-color: rgb(255, 115, 0);
+    color: #eae3dc;
     box-shadow: 0 2px 5px rgba(255, 115, 0, 0.3);
 }
 
 .category[data-category="mouse"].active {
-    background-color: rgba(255, 115, 0, 0.4);
-    box-shadow: 0 2px 5px rgba(255, 115, 0, 0.3);
+    background-color: rgb(11, 203, 162);
+    color: #eae3dc;
+    box-shadow: 0 2px 5px rgba(11, 203, 162, 0.3);
 }
 
 .category[data-category="keyboard"].active {
-    background-color: rgba(35, 132, 251, 0.4);
+    background-color: rgb(0, 115, 255);
+    color: #eae3dc;
     box-shadow: 0 2px 5px rgba(35, 132, 251, 0.3);
 }
 
 .category[data-category="vision"].active {
-    background-color: rgba(221, 58, 8, 0.4);
+    background-color: rgb(213, 1, 1);
+    color: #eae3dc;
     box-shadow: 0 2px 5px rgba(221, 58, 8, 0.3);
 }
 
 .category[data-category="voice"].active {
-    background-color: rgba(199, 59, 222, 0.4);
+    background-color: rgb(160, 5, 177);
+    color: #eae3dc;
     box-shadow: 0 2px 5px rgba(199, 59, 222, 0.3);
 }
 
 .category[data-category="math"].active {
-    background-color: rgba(69, 159, 16, 0.4);
+    background-color: rgba(69, 159, 16, 1);
+    color: #eae3dc;
     box-shadow: 0 2px 5px rgba(69, 159, 16, 0.3);
 }
 
 .category[data-category="control"].active {
-    background-color: rgba(255, 183, 0, 0.4);
+    background-color: rgb(255, 153, 0);
+    color: #eae3dc;
     box-shadow: 0 2px 5px rgba(255, 183, 0, 0.3);
 }
 
