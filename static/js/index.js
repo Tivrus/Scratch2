@@ -207,6 +207,319 @@ document.addEventListener('DOMContentLoaded', () => {
     // Инициализация зум-контролов
     initZoomControls();
     updateZoom();
+
+    // Modal Management
+    const librariesModal = document.getElementById('libraries-modal');
+    const blockCreatorModal = document.getElementById('block-creator-modal');
+    const librariesBtn = document.getElementById('libraries-btn');
+    const blockCreatorBtn = document.getElementById('block-creator-btn');
+    const closeButtons = document.querySelectorAll('.close-modal');
+
+    // Built-in libraries data
+    const builtinLibraries = [
+        {
+            name: 'Математика',
+            description: 'Базовые математические операции и функции',
+            blocks: ['сложение', 'вычитание', 'умножение', 'деление', 'корень', 'степень']
+        },
+        {
+            name: 'Строки',
+            description: 'Операции со строками и текстом',
+            blocks: ['объединить', 'длина', 'подстрока', 'заменить', 'разделить']
+        },
+        {
+            name: 'Списки',
+            description: 'Работа со списками и массивами',
+            blocks: ['добавить', 'удалить', 'получить', 'длина', 'сортировка']
+        }
+    ];
+
+    // User libraries storage
+    let userLibraries = JSON.parse(localStorage.getItem('userLibraries')) || [];
+
+    // Initialize modals
+    function initModals() {
+        // Libraries modal
+        librariesBtn.addEventListener('click', () => {
+            librariesModal.classList.add('active');
+            loadLibraries();
+        });
+
+        // Block creator modal
+        blockCreatorBtn.addEventListener('click', () => {
+            blockCreatorModal.classList.add('active');
+        });
+
+        // Close buttons
+        closeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                librariesModal.classList.remove('active');
+                blockCreatorModal.classList.remove('active');
+            });
+        });
+
+        // Close on outside click
+        window.addEventListener('click', (e) => {
+            if (e.target === librariesModal) {
+                librariesModal.classList.remove('active');
+            }
+            if (e.target === blockCreatorModal) {
+                blockCreatorModal.classList.remove('active');
+            }
+        });
+
+        // Libraries tabs
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const tabId = btn.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                document.getElementById(`${tabId}-libraries`).style.display = 'block';
+            });
+        });
+
+        // Add library button
+        const addLibraryBtn = document.querySelector('.add-library-btn');
+        if (addLibraryBtn) {
+            addLibraryBtn.addEventListener('click', showAddLibraryForm);
+        }
+
+        // Block creator form
+        const blockCreatorForm = document.getElementById('block-creator-form');
+        if (blockCreatorForm) {
+            blockCreatorForm.addEventListener('submit', handleBlockCreatorSubmit);
+        }
+
+        // Add input button
+        const addInputBtn = document.querySelector('.add-input-btn');
+        if (addInputBtn) {
+            addInputBtn.addEventListener('click', addBlockInput);
+        }
+
+        // Preview block button
+        const previewBlockBtn = document.querySelector('.preview-block-btn');
+        if (previewBlockBtn) {
+            previewBlockBtn.addEventListener('click', previewBlock);
+        }
+    }
+
+    // Load libraries
+    function loadLibraries() {
+        const builtinList = document.querySelector('#builtin-libraries .library-list');
+        const userList = document.querySelector('#user-libraries .library-list');
+
+        // Load built-in libraries
+        builtinList.innerHTML = builtinLibraries.map(lib => `
+            <div class="library-item">
+                <h3>${lib.name}</h3>
+                <p>${lib.description}</p>
+                <div class="library-blocks">
+                    ${lib.blocks.map(block => `<span class="block-tag">${block}</span>`).join('')}
+                </div>
+            </div>
+        `).join('');
+
+        // Load user libraries
+        userList.innerHTML = userLibraries.map(lib => `
+            <div class="library-item">
+                <h3>${lib.name}</h3>
+                <p>${lib.description}</p>
+                <div class="library-blocks">
+                    ${lib.blocks.map(block => `<span class="block-tag">${block}</span>`).join('')}
+                </div>
+                <button class="remove-library-btn" data-library="${lib.name}">Удалить</button>
+            </div>
+        `).join('');
+
+        // Add event listeners for remove buttons
+        document.querySelectorAll('.remove-library-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const libraryName = e.target.dataset.library;
+                removeLibrary(libraryName);
+            });
+        });
+    }
+
+    // Show add library form
+    function showAddLibraryForm() {
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Добавить библиотеку</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-library-form">
+                        <div class="form-group">
+                            <label for="library-name">Название библиотеки:</label>
+                            <input type="text" id="library-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="library-description">Описание:</label>
+                            <input type="text" id="library-description" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Блоки:</label>
+                            <div id="library-blocks-container">
+                                <div class="block-input">
+                                    <input type="text" placeholder="Название блока" required>
+                                    <button type="button" class="remove-input-btn">&times;</button>
+                                </div>
+                            </div>
+                            <button type="button" class="add-input-btn">Добавить блок</button>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="save-block-btn">Сохранить</button>
+                            <button type="button" class="preview-block-btn close-modal">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Add event listeners
+        const form = modal.querySelector('#add-library-form');
+        const addBlockBtn = modal.querySelector('.add-input-btn');
+        const closeBtn = modal.querySelector('.close-modal');
+
+        form.addEventListener('submit', handleAddLibrarySubmit);
+        addBlockBtn.addEventListener('click', () => addBlockInput(modal));
+        closeBtn.addEventListener('click', () => modal.remove());
+
+        // Add event listeners for remove buttons
+        modal.querySelectorAll('.remove-input-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.target.closest('.block-input').remove();
+            });
+        });
+    }
+
+    // Handle add library form submit
+    function handleAddLibrarySubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const name = form.querySelector('#library-name').value;
+        const description = form.querySelector('#library-description').value;
+        const blocks = Array.from(form.querySelectorAll('#library-blocks-container input'))
+            .map(input => input.value)
+            .filter(value => value.trim() !== '');
+
+        const newLibrary = {
+            name,
+            description,
+            blocks
+        };
+
+        userLibraries.push(newLibrary);
+        localStorage.setItem('userLibraries', JSON.stringify(userLibraries));
+        
+        form.closest('.modal').remove();
+        loadLibraries();
+    }
+
+    // Remove library
+    function removeLibrary(libraryName) {
+        userLibraries = userLibraries.filter(lib => lib.name !== libraryName);
+        localStorage.setItem('userLibraries', JSON.stringify(userLibraries));
+        loadLibraries();
+    }
+
+    // Add block input to form
+    function addBlockInput(modal) {
+        const container = modal.querySelector('#library-blocks-container');
+        const inputDiv = document.createElement('div');
+        inputDiv.className = 'block-input';
+        inputDiv.innerHTML = `
+            <input type="text" placeholder="Название блока" required>
+            <button type="button" class="remove-input-btn">&times;</button>
+        `;
+        container.appendChild(inputDiv);
+
+        inputDiv.querySelector('.remove-input-btn').addEventListener('click', (e) => {
+            e.target.closest('.block-input').remove();
+        });
+    }
+
+    // Handle block creator form submit
+    function handleBlockCreatorSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const blockData = {
+            name: form.querySelector('#block-name').value,
+            category: form.querySelector('#block-category').value,
+            type: form.querySelector('#block-type').value,
+            color: form.querySelector('#block-color').value,
+            inputs: Array.from(form.querySelectorAll('#block-inputs-container input'))
+                .map(input => input.value)
+                .filter(value => value.trim() !== '')
+        };
+
+        // Save the block definition
+        const userBlocks = JSON.parse(localStorage.getItem('userBlocks')) || [];
+        userBlocks.push(blockData);
+        localStorage.setItem('userBlocks', JSON.stringify(userBlocks));
+
+        // Close modal and refresh block palette
+        blockCreatorModal.classList.remove('active');
+        selectCategory(blockData.category);
+    }
+
+    // Preview block
+    function previewBlock() {
+        const form = document.getElementById('block-creator-form');
+        const blockData = {
+            name: form.querySelector('#block-name').value,
+            category: form.querySelector('#block-category').value,
+            type: form.querySelector('#block-type').value,
+            color: form.querySelector('#block-color').value,
+            inputs: Array.from(form.querySelectorAll('#block-inputs-container input'))
+                .map(input => input.value)
+                .filter(value => value.trim() !== '')
+        };
+
+        // Create a preview block
+        const previewBlock = createBlock({
+            type: blockData.type,
+            text: blockData.name,
+            inputs: blockData.inputs,
+            color: blockData.color
+        });
+
+        // Show preview in a modal
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Предпросмотр блока</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="block-preview">
+                        ${previewBlock.outerHTML}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
+    }
+
+    // Initialize modals when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+        // ... existing initialization code ...
+        initModals();
+    });
 });
 
 // Создать категории блоков

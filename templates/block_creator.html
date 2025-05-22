@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Создание блоков - Scratch2</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    </head>
+    <body>
+        <div class="scratch-app">
+            <header class="header">
+                <a href="/Scratch2/main" class="logo">Scratch2</a>
+                <div class="menu">
+                    <button class="menu-btn">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 5.14V19.14L19 12.14L8 5.14Z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Компилировать</span>
+                    </button>
+                    <button class="menu-btn">Файл</button>
+                    <a href="/libraries" class="menu-btn">Библиотеки</a>
+                    <a href="/block-creator" class="menu-btn">Создание блоков</a>
+                    <button class="menu-btn">Справка</button>
+                </div>
+            </header>
+            
+            <main class="main-content block-creator-page">
+                <div class="block-creator-container">
+                    <form id="block-creator-form">
+                        <div class="form-group">
+                            <label for="block-name">Название блока:</label>
+                            <input type="text" id="block-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="block-category">Категория:</label>
+                            <select id="block-category" required>
+                                <option value="start">Запуск</option>
+                                <option value="mouse">Управление мышью</option>
+                                <option value="keyboard">Управление клавиатурой</option>
+                                <option value="vision">Компьютерное зрение</option>
+                                <option value="voice">Голосовые команды</option>
+                                <option value="math">Мат операции</option>
+                                <option value="control">Управление</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="block-type">Тип блока:</label>
+                            <select id="block-type" required>
+                                <option value="action">Действие</option>
+                                <option value="condition">Условие</option>
+                                <option value="loop">Цикл</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="block-color">Цвет блока:</label>
+                            <input type="color" id="block-color" value="#4d97ff" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="block-inputs">Входные параметры:</label>
+                            <div id="block-inputs-container">
+                                <button type="button" class="add-input-btn">Добавить параметр</button>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="save-block-btn">Сохранить блок</button>
+                            <button type="button" class="preview-block-btn">Предпросмотр</button>
+                        </div>
+                    </form>
+                    
+                    <div class="block-preview">
+                        <h3>Предпросмотр блока</h3>
+                        <div id="preview-container">
+                            <!-- Здесь будет отображаться предпросмотр блока -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        <script type="module" src="{{ url_for('static', filename='js/block_creator.js') }}"></script>
+    </body>
+</html> 

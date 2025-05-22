@@ -12,10 +12,17 @@
     <body>
         <div class="scratch-app">
             <header class="header">
-                <div class="logo">Scratch2</div>
+                <a href="/Scratch2/main" class="logo">Scratch2</a>
                 <div class="menu">
+                    <button class="menu-btn">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 5.14V19.14L19 12.14L8 5.14Z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Компилировать</span>
+                    </button>
                     <button class="menu-btn">Файл</button>
-                    <button class="menu-btn">Правка</button>
+                    <a href="/libraries" class="menu-btn">Библиотеки</a>
+                    <a href="/block-creator" class="menu-btn">Создание блоков</a>
                     <button class="menu-btn">Справка</button>
                 </div>
             </header>
@@ -32,6 +39,84 @@
                 <div class="scripts-area">
                     <div id="scripts-workspace" class="scripts-workspace"></div>
                     
+                    <!-- Модальные окна для библиотек и создания блоков -->
+                    <div id="libraries-modal" class="modal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2>Библиотеки</h2>
+                                <button class="close-modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="libraries-tabs">
+                                    <button class="tab-btn active" data-tab="builtin">Встроенные</button>
+                                    <button class="tab-btn" data-tab="user">Пользовательские</button>
+                                </div>
+                                <div class="tab-content" id="builtin-libraries">
+                                    <div class="library-list">
+                                        <!-- Встроенные библиотеки будут добавлены через JavaScript -->
+                                    </div>
+                                </div>
+                                <div class="tab-content" id="user-libraries" style="display: none;">
+                                    <div class="library-list">
+                                        <!-- Пользовательские библиотеки будут добавлены через JavaScript -->
+                                    </div>
+                                    <button class="add-library-btn">Добавить библиотеку</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="block-creator-modal" class="modal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2>Создание блока</h2>
+                                <button class="close-modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="block-creator-form">
+                                    <div class="form-group">
+                                        <label for="block-name">Название блока:</label>
+                                        <input type="text" id="block-name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="block-category">Категория:</label>
+                                        <select id="block-category" required>
+                                            <option value="start">Запуск</option>
+                                            <option value="mouse">Управление мышью</option>
+                                            <option value="keyboard">Управление клавиатурой</option>
+                                            <option value="vision">Компьютерное зрение</option>
+                                            <option value="voice">Голосовые команды</option>
+                                            <option value="math">Мат операции</option>
+                                            <option value="control">Управление</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="block-type">Тип блока:</label>
+                                        <select id="block-type" required>
+                                            <option value="action">Действие</option>
+                                            <option value="condition">Условие</option>
+                                            <option value="loop">Цикл</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="block-color">Цвет блока:</label>
+                                        <input type="color" id="block-color" value="#4d97ff" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="block-inputs">Входные параметры:</label>
+                                        <div id="block-inputs-container">
+                                            <button type="button" class="add-input-btn">Добавить параметр</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="save-block-btn">Сохранить блок</button>
+                                        <button type="button" class="preview-block-btn">Предпросмотр</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="zoom-controls">
                         <div class="zoom-control" id="zoom-out">-</div>
                         <div class="zoom-text" id="zoom-level">100%</div>

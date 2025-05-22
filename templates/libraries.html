@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Библиотеки - Scratch2</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    </head>
+    <body>
+        <div class="scratch-app">
+            <header class="header">
+                <a href="/Scratch2/main" class="logo">Scratch2</a>
+                <div class="menu">
+                    <button class="menu-btn">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 5.14V19.14L19 12.14L8 5.14Z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Компилировать</span>
+                    </button>
+                    <button class="menu-btn">Файл</button>
+                    <a href="/libraries" class="menu-btn">Библиотеки</a>
+                    <a href="/block-creator" class="menu-btn">Создание блоков</a>
+                    <button class="menu-btn">Справка</button>
+                </div>
+            </header>
+            
+            <main class="main-content libraries-page">
+                <div class="libraries-container">
+                    <div class="libraries-tabs">
+                        <button class="tab-btn active" data-tab="builtin">Встроенные библиотеки</button>
+                        <button class="tab-btn" data-tab="user">Пользовательские библиотеки</button>
+                    </div>
+                    
+                    <div class="tab-content active" id="builtin-libraries">
+                        <div class="library-list">
+                            <!-- Встроенные библиотеки будут добавлены через JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="user-libraries">
+                        <div class="library-list">
+                            <!-- Пользовательские библиотеки будут добавлены через JavaScript -->
+                        </div>
+                        <button class="add-library-btn">Добавить библиотеку</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+        <script type="module" src="{{ url_for('static', filename='js/libraries.js') }}"></script>
+    </body>
+</html> 
