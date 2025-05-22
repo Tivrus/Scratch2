@@ -83,7 +83,7 @@ body {
 
 .category {
     width: 100%;
-    font-size: 1.1rem;
+    font-size: 1rem;
     min-height: 5rem;
     display: flex;
     align-items: center;
@@ -99,40 +99,45 @@ body {
 .category:hover {
     background-color: rgba(255, 255, 255, 0.8);
     border-radius: 10px;
-    transform: translateX(10px);
+    width: calc(100% - 8px);
+    transform: translateX(8px);
+    border-radius: 10px 0 0 10px;
 }
 
 .category.active {
     font-weight: bold;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: calc(100% - 15px);
+    transform: translateX(15px);
+    border-radius: 10px 0 0 10px;
 }
 
 .category[data-category="start"] {
-    background-color: rgba(255, 115, 0, 0.6);
+    background-color: rgba(255, 115, 0, 0.5);
 }
 
 .category[data-category="mouse"] {
-    background-color: rgba(11, 203, 162, 0.6);
+    background-color: rgba(11, 203, 162, 0.5);
 }
 
 .category[data-category="keyboard"] {
-    background-color: rgba(35, 132, 251, 0.6);
+    background-color: rgba(35, 132, 251, 0.5);
 }
 
 .category[data-category="vision"] {
-    background-color: rgba(221, 58, 8, 0.6);
+    background-color: rgba(221, 58, 8, 0.5);
 }
 
 .category[data-category="voice"] {
-    background-color: rgba(199, 59, 222, 0.6);
+    background-color: rgba(199, 59, 222, 0.5);
 }
 
 .category[data-category="math"] {
-    background-color: rgba(69, 159, 16, 0.6);
+    background-color: rgba(69, 159, 16, 0.5);
 }
 
 .category[data-category="control"] {
-    background-color: rgba(255, 183, 0, 0.6);
+    background-color: rgba(255, 183, 0, 0.5);
 }
 
 .category[data-category="start"].active {
