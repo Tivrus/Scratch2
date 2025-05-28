@@ -119,9 +119,15 @@ const BASE_BLOCK_WIDTH = 170; // Базовая ширина блока
 let activeDragBlock = null;
 let dragBlockZIndex = 10000; // Базовый z-index для перетаскивания
 
+// Добавляем флаг для контроля автоматической активации категорий
+let isInitialLoad = true;
+let isUserScrolling = false;
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM loaded - initializing application");
+    console.log("DOM loaded - starting initialization");
+    
+    // Инициализация основных элементов
     scriptWorkspace = document.getElementById('scripts-workspace');
     blockPalette = document.querySelector('.blocks-palette');
     categories = document.querySelectorAll('.category');
@@ -133,26 +139,74 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Critical elements missing:", 
                      !scriptWorkspace ? "scriptWorkspace" : "", 
                      !blockPalette ? "blockPalette" : "");
+        return;
     }
 
-    // Создаем категории
+    // Создаем категории и ждем их создания
     createCategories();
     
-    // Обновить список категорий
+    // Обновляем список категорий после их создания
     categories = document.querySelectorAll('.category');
 
-    // Set up category click handlers
+    // Устанавливаем обработчики для категорий
     categories.forEach(category => {
         category.addEventListener('click', () => selectCategory(category.dataset.category));
     });
+
+    // Инициализируем блоки для категории start
+    const startCategory = document.querySelector('.category[data-category="start"]');
+    if (startCategory) {
+        // Устанавливаем активную категорию
+        activeCategory = 'start';
+        startCategory.classList.add('active');
+        
+        // Очищаем палитру блоков перед добавлением новых
+        blockPalette.innerHTML = '';
+
+        // Загружаем блоки для всех категорий
+        const categoryNames = {
+            'start': 'Запуск',
+            'mouse': 'Управление мышью',
+            'keyboard': 'Управление клавиатурой',
+            'vision': 'Компьютерное зрение',
+            'voice': 'Голосовые команды',
+            'math': 'Математические операции',
+            'control': 'Управление'
+        };
+
+        // Добавляем все категории и их блоки
+        Object.keys(blockDefinitions).forEach(category => {
+            const categoryTitle = document.createElement('div');
+            categoryTitle.className = 'category-title';
+            categoryTitle.textContent = categoryNames[category] || category;
+            categoryTitle.dataset.category = category;
+            blockPalette.appendChild(categoryTitle);
+            
+            // Добавляем блоки для этой категории
+            const categoryBlocks = blockDefinitions[category];
+            if (categoryBlocks) {
+                Object.values(categoryBlocks).forEach(section => {
+                    if (Array.isArray(section)) {
+                        section.forEach(block => {
+                            createBlockInPalette(block);
+                        });
+                    }
+                });
+            }
+        });
+
+        // Настраиваем отслеживание прокрутки
+        setupCategoryScrollTracking();
+        
+        // Убираем автоматическую прокрутку при инициализации
+        // Просто устанавливаем scrollTop в 0 без анимации
+        blockPalette.scrollTop = 0;
+    }
 
     // Set up zoom controls
     document.getElementById('zoom-in').addEventListener('click', () => changeZoom(10));
     document.getElementById('zoom-out').addEventListener('click', () => changeZoom(-10));
     document.getElementById('zoom-reset').addEventListener('click', () => resetZoom());
-
-    // Select default category
-    selectCategory('start');
 
     // Set up mouse visualization
     setupMouseVisualization();
@@ -160,8 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set up keyboard visualization
     createKeyboardLayout();
     
-    // Удаляем старые обработчики перед установкой новых
-    // Вместо замены элемента добавляем напрямую обработчик
+    // Устанавливаем обработчик для палитры блоков
     blockPalette.addEventListener('mousedown', onPaletteMouseDown, { capture: true });
     
     // Чтобы рабочая область реагировала на перетаскивание
@@ -181,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
     scriptWorkspace.addEventListener('mouseover', (e) => {
         const block = findParentBlock(e.target);
         if (block && !block.classList.contains('dragging')) {
-            // Вместо масштабирования, просто добавим тень
             block.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.2)';
         }
     });
@@ -189,345 +241,34 @@ document.addEventListener('DOMContentLoaded', () => {
     scriptWorkspace.addEventListener('mouseout', (e) => {
         const block = findParentBlock(e.target);
         if (block && !block.classList.contains('dragging')) {
-            // Убираем тень при уходе курсора
             block.style.boxShadow = '';
         }
     });
     
-    // Добавляем слушателя событий для проверки браузерных событий
-    window.addEventListener('error', function(e) {
-        console.error('Browser error:', e.message);
-    });
-    
     // Add run button to header
     createRunControls();
-    
-    console.log("Initialization complete - ready for blocks!");
 
     // Инициализация зум-контролов
     initZoomControls();
     updateZoom();
 
-    // Modal Management
-    const librariesModal = document.getElementById('libraries-modal');
-    const blockCreatorModal = document.getElementById('block-creator-modal');
-    const librariesBtn = document.getElementById('libraries-btn');
-    const blockCreatorBtn = document.getElementById('block-creator-btn');
-    const closeButtons = document.querySelectorAll('.close-modal');
-
-    // Built-in libraries data
-    const builtinLibraries = [
-        {
-            name: 'Математика',
-            description: 'Базовые математические операции и функции',
-            blocks: ['сложение', 'вычитание', 'умножение', 'деление', 'корень', 'степень']
-        },
-        {
-            name: 'Строки',
-            description: 'Операции со строками и текстом',
-            blocks: ['объединить', 'длина', 'подстрока', 'заменить', 'разделить']
-        },
-        {
-            name: 'Списки',
-            description: 'Работа со списками и массивами',
-            blocks: ['добавить', 'удалить', 'получить', 'длина', 'сортировка']
-        }
-    ];
-
-    // User libraries storage
-    let userLibraries = JSON.parse(localStorage.getItem('userLibraries')) || [];
-
     // Initialize modals
-    function initModals() {
-        // Libraries modal
-        librariesBtn.addEventListener('click', () => {
-            librariesModal.classList.add('active');
-            loadLibraries();
-        });
-
-        // Block creator modal
-        blockCreatorBtn.addEventListener('click', () => {
-            blockCreatorModal.classList.add('active');
-        });
-
-        // Close buttons
-        closeButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                librariesModal.classList.remove('active');
-                blockCreatorModal.classList.remove('active');
-            });
-        });
-
-        // Close on outside click
-        window.addEventListener('click', (e) => {
-            if (e.target === librariesModal) {
-                librariesModal.classList.remove('active');
-            }
-            if (e.target === blockCreatorModal) {
-                blockCreatorModal.classList.remove('active');
-            }
-        });
-
-        // Libraries tabs
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        tabButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                tabButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                const tabId = btn.dataset.tab;
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.style.display = 'none';
-                });
-                document.getElementById(`${tabId}-libraries`).style.display = 'block';
-            });
-        });
-
-        // Add library button
-        const addLibraryBtn = document.querySelector('.add-library-btn');
-        if (addLibraryBtn) {
-            addLibraryBtn.addEventListener('click', showAddLibraryForm);
-        }
-
-        // Block creator form
-        const blockCreatorForm = document.getElementById('block-creator-form');
-        if (blockCreatorForm) {
-            blockCreatorForm.addEventListener('submit', handleBlockCreatorSubmit);
-        }
-
-        // Add input button
-        const addInputBtn = document.querySelector('.add-input-btn');
-        if (addInputBtn) {
-            addInputBtn.addEventListener('click', addBlockInput);
-        }
-
-        // Preview block button
-        const previewBlockBtn = document.querySelector('.preview-block-btn');
-        if (previewBlockBtn) {
-            previewBlockBtn.addEventListener('click', previewBlock);
-        }
-    }
-
-    // Load libraries
-    function loadLibraries() {
-        const builtinList = document.querySelector('#builtin-libraries .library-list');
-        const userList = document.querySelector('#user-libraries .library-list');
-
-        // Load built-in libraries
-        builtinList.innerHTML = builtinLibraries.map(lib => `
-            <div class="library-item">
-                <h3>${lib.name}</h3>
-                <p>${lib.description}</p>
-                <div class="library-blocks">
-                    ${lib.blocks.map(block => `<span class="block-tag">${block}</span>`).join('')}
-                </div>
-            </div>
-        `).join('');
-
-        // Load user libraries
-        userList.innerHTML = userLibraries.map(lib => `
-            <div class="library-item">
-                <h3>${lib.name}</h3>
-                <p>${lib.description}</p>
-                <div class="library-blocks">
-                    ${lib.blocks.map(block => `<span class="block-tag">${block}</span>`).join('')}
-                </div>
-                <button class="remove-library-btn" data-library="${lib.name}">Удалить</button>
-            </div>
-        `).join('');
-
-        // Add event listeners for remove buttons
-        document.querySelectorAll('.remove-library-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const libraryName = e.target.dataset.library;
-                removeLibrary(libraryName);
-            });
-        });
-    }
-
-    // Show add library form
-    function showAddLibraryForm() {
-        const modal = document.createElement('div');
-        modal.className = 'modal active';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Добавить библиотеку</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <form id="add-library-form">
-                        <div class="form-group">
-                            <label for="library-name">Название библиотеки:</label>
-                            <input type="text" id="library-name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="library-description">Описание:</label>
-                            <input type="text" id="library-description" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Блоки:</label>
-                            <div id="library-blocks-container">
-                                <div class="block-input">
-                                    <input type="text" placeholder="Название блока" required>
-                                    <button type="button" class="remove-input-btn">&times;</button>
-                                </div>
-                            </div>
-                            <button type="button" class="add-input-btn">Добавить блок</button>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="save-block-btn">Сохранить</button>
-                            <button type="button" class="preview-block-btn close-modal">Отмена</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        // Add event listeners
-        const form = modal.querySelector('#add-library-form');
-        const addBlockBtn = modal.querySelector('.add-input-btn');
-        const closeBtn = modal.querySelector('.close-modal');
-
-        form.addEventListener('submit', handleAddLibrarySubmit);
-        addBlockBtn.addEventListener('click', () => addBlockInput(modal));
-        closeBtn.addEventListener('click', () => modal.remove());
-
-        // Add event listeners for remove buttons
-        modal.querySelectorAll('.remove-input-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.target.closest('.block-input').remove();
-            });
-        });
-    }
-
-    // Handle add library form submit
-    function handleAddLibrarySubmit(e) {
-        e.preventDefault();
-        const form = e.target;
-        const name = form.querySelector('#library-name').value;
-        const description = form.querySelector('#library-description').value;
-        const blocks = Array.from(form.querySelectorAll('#library-blocks-container input'))
-            .map(input => input.value)
-            .filter(value => value.trim() !== '');
-
-        const newLibrary = {
-            name,
-            description,
-            blocks
-        };
-
-        userLibraries.push(newLibrary);
-        localStorage.setItem('userLibraries', JSON.stringify(userLibraries));
-        
-        form.closest('.modal').remove();
-        loadLibraries();
-    }
-
-    // Remove library
-    function removeLibrary(libraryName) {
-        userLibraries = userLibraries.filter(lib => lib.name !== libraryName);
-        localStorage.setItem('userLibraries', JSON.stringify(userLibraries));
-        loadLibraries();
-    }
-
-    // Add block input to form
-    function addBlockInput(modal) {
-        const container = modal.querySelector('#library-blocks-container');
-        const inputDiv = document.createElement('div');
-        inputDiv.className = 'block-input';
-        inputDiv.innerHTML = `
-            <input type="text" placeholder="Название блока" required>
-            <button type="button" class="remove-input-btn">&times;</button>
-        `;
-        container.appendChild(inputDiv);
-
-        inputDiv.querySelector('.remove-input-btn').addEventListener('click', (e) => {
-            e.target.closest('.block-input').remove();
-        });
-    }
-
-    // Handle block creator form submit
-    function handleBlockCreatorSubmit(e) {
-        e.preventDefault();
-        const form = e.target;
-        const blockData = {
-            name: form.querySelector('#block-name').value,
-            category: form.querySelector('#block-category').value,
-            type: form.querySelector('#block-type').value,
-            color: form.querySelector('#block-color').value,
-            inputs: Array.from(form.querySelectorAll('#block-inputs-container input'))
-                .map(input => input.value)
-                .filter(value => value.trim() !== '')
-        };
-
-        // Save the block definition
-        const userBlocks = JSON.parse(localStorage.getItem('userBlocks')) || [];
-        userBlocks.push(blockData);
-        localStorage.setItem('userBlocks', JSON.stringify(userBlocks));
-
-        // Close modal and refresh block palette
-        blockCreatorModal.classList.remove('active');
-        selectCategory(blockData.category);
-    }
-
-    // Preview block
-    function previewBlock() {
-        const form = document.getElementById('block-creator-form');
-        const blockData = {
-            name: form.querySelector('#block-name').value,
-            category: form.querySelector('#block-category').value,
-            type: form.querySelector('#block-type').value,
-            color: form.querySelector('#block-color').value,
-            inputs: Array.from(form.querySelectorAll('#block-inputs-container input'))
-                .map(input => input.value)
-                .filter(value => value.trim() !== '')
-        };
-
-        // Create a preview block
-        const previewBlock = createBlock({
-            type: blockData.type,
-            text: blockData.name,
-            inputs: blockData.inputs,
-            color: blockData.color
-        });
-
-        // Show preview in a modal
-        const modal = document.createElement('div');
-        modal.className = 'modal active';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Предпросмотр блока</h2>
-                    <button class="close-modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="block-preview">
-                        ${previewBlock.outerHTML}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-        modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
-    }
-
-    // Initialize modals when DOM is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-        // ... existing initialization code ...
-        initModals();
-    });
+    initModals();
 });
 
-// Создать категории блоков
+// Модифицируем функцию createCategories для добавления отладочной информации
 function createCategories() {
+    console.log("Starting category creation");
     const categoriesContainer = document.querySelector('.block-categories');
+    
+    if (!categoriesContainer) {
+        console.error("Categories container not found!");
+        return;
+    }
     
     // Очищаем контейнер
     categoriesContainer.innerHTML = '';
+    console.log("Categories container cleared");
     
     // Создаем категории
     const categoryData = [
@@ -541,23 +282,21 @@ function createCategories() {
     ];
     
     categoryData.forEach(cat => {
-        if (cat.id == 'start'){
             const categoryElement = document.createElement('div');
             categoryElement.className = 'category';
             categoryElement.dataset.category = cat.id;
             categoryElement.textContent = cat.name;
+        
+        if (cat.id === 'start') {
             categoryElement.classList.add('active');
-            categoriesContainer.appendChild(categoryElement);
+            console.log("Start category element created and marked as active");
         }
-        else{
-        const categoryElement = document.createElement('div');
-        categoryElement.className = 'category';
-        categoryElement.dataset.category = cat.id;
-        categoryElement.textContent = cat.name;
+        
         categoriesContainer.appendChild(categoryElement);
-        }
+        console.log(`Category element created: ${cat.id}`);
     });
 
+    console.log("All categories created");
 }
 
 // Select a category and display its blocks
@@ -566,7 +305,7 @@ function selectCategory(categoryName) {
     if (activeCategory === categoryName) {
         return;
     }
-
+    
     // Обновляем активную категорию
     categories.forEach(cat => {
         if (cat.dataset.category === categoryName) {
@@ -576,10 +315,10 @@ function selectCategory(categoryName) {
         }
     });
     activeCategory = categoryName;
-
+    
     // Очищаем палитру блоков
     blockPalette.innerHTML = '';
-
+    
     // Словарь с отображаемыми названиями категорий
     const categoryNames = {
         'start': 'Запуск',
@@ -598,7 +337,7 @@ function selectCategory(categoryName) {
         categoryTitle.textContent = categoryNames[category] || category;
         categoryTitle.dataset.category = category;
         blockPalette.appendChild(categoryTitle);
-        
+                
         // Добавляем блоки для этой категории
         const categoryBlocks = blockDefinitions[category];
         if (categoryBlocks) {
@@ -612,19 +351,25 @@ function selectCategory(categoryName) {
         }
     });
 
-    // Добавляем обработчик прокрутки для отслеживания видимости категорий
+    // Пересоздаем отслеживание прокрутки
     setupCategoryScrollTracking();
 
-    // Плавно прокручиваем к выбранной категории
+    // Прокручиваем к выбранной категории только при явном клике
     const targetCategory = document.querySelector(`.category-title[data-category="${categoryName}"]`);
     if (targetCategory) {
-        requestAnimationFrame(() => {
-            const scrollTop = targetCategory.offsetTop - blockPalette.offsetTop - 10;
-            blockPalette.scrollTo({
-                top: scrollTop,
-                behavior: 'smooth'
-            });
+        // Временно отключаем отслеживание прокрутки
+        isUserScrolling = false;
+        
+        const scrollTop = targetCategory.offsetTop - blockPalette.offsetTop - 10;
+        blockPalette.scrollTo({
+            top: scrollTop,
+            behavior: 'smooth'
         });
+        
+        // Включаем отслеживание прокрутки через время анимации
+        setTimeout(() => {
+            isUserScrolling = true;
+        }, 300);
     }
 }
 
@@ -632,28 +377,55 @@ function selectCategory(categoryName) {
 function setupCategoryScrollTracking() {
     let lastVisibleCategory = null;
     let scrollTimeout = null;
-    let isScrolling = false;
 
     const observer = new IntersectionObserver((entries) => {
-        if (isScrolling) return;
+        // Игнорируем события во время начальной загрузки
+        if (isInitialLoad) {
+            console.log("Observer ignored: initial load");
+            return;
+        }
+        
+        // Игнорируем события, если это не пользовательская прокрутка
+        if (!isUserScrolling) {
+             console.log("Observer ignored: not user scrolling");
+            return;
+        }
 
-        // Находим наиболее видимую категорию
+        // Находим категорию с наибольшим процентом видимости
         let mostVisibleEntry = null;
         let maxVisibility = 0;
 
+        console.log("--- Scroll Event ---");
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                const visibility = entry.intersectionRatio;
-                if (visibility > maxVisibility) {
-                    maxVisibility = visibility;
+                // Вычисляем процент видимости с учетом высоты элемента
+                const rect = entry.boundingClientRect;
+                const containerRect = blockPalette.getBoundingClientRect();
+                
+                // Видимая область в контейнере прокрутки
+                const visibleTop = Math.max(containerRect.top, rect.top);
+                const visibleBottom = Math.min(containerRect.bottom, rect.bottom);
+                const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+                
+                // Общая высота элемента
+                const elementHeight = rect.height;
+                
+                // Вычисляем процент видимости относительно высоты элемента
+                const visibilityPercent = (visibleHeight / elementHeight) * 100;
+                
+                console.log(`Category: ${entry.target.dataset.category}, Visible Height: ${visibleHeight.toFixed(2)}px, Element Height: ${elementHeight.toFixed(2)}px, Visibility: ${visibilityPercent.toFixed(2)}%`);
+                
+                if (visibilityPercent > maxVisibility) {
+                    maxVisibility = visibilityPercent;
                     mostVisibleEntry = entry;
                 }
             }
         });
 
-        // Если нашли видимую категорию и она отличается от текущей
-        if (mostVisibleEntry && mostVisibleEntry.target.dataset.category !== activeCategory) {
+        // Если нашли видимую категорию с процентом больше нуля и она отличается от текущей
+        if (mostVisibleEntry && maxVisibility > 0 && mostVisibleEntry.target.dataset.category !== activeCategory) {
             const category = mostVisibleEntry.target.dataset.category;
+            console.log(`Most visible category: ${category}, Visibility: ${maxVisibility.toFixed(2)}%`);
             
             // Очищаем предыдущий таймаут, если он есть
             if (scrollTimeout) {
@@ -662,18 +434,30 @@ function setupCategoryScrollTracking() {
 
             scrollTimeout = setTimeout(() => {
                 if (category !== lastVisibleCategory) {
-                    isScrolling = true;
-                    selectCategory(category);
+                    console.log(`Activating category: ${category}`);
+                    // Обновляем активную категорию без прокрутки
+                    categories.forEach(cat => {
+                        if (cat.dataset.category === category) {
+                            cat.classList.add('active');
+                        } else {
+                            cat.classList.remove('active');
+                        }
+                    });
+                    activeCategory = category;
                     lastVisibleCategory = category;
-                    setTimeout(() => {
-                        isScrolling = false;
-                    }, 300); // Время анимации прокрутки
                 }
-            }, 100);
+            }, 50);
+        } else if (mostVisibleEntry) {
+             console.log(`Most visible category (${mostVisibleEntry.target.dataset.category}) is already active or has 0% visibility.`);
+        } else {
+            console.log("No intersecting category found with significant visibility.");
         }
+        console.log("--- End Scroll Event ---");
+
     }, {
-        threshold: [0, 0.25, 0.5, 0.75, 1],
-        rootMargin: '-10% 0px -10% 0px'
+        threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        rootMargin: '-5% 0px -5% 0px',
+        root: blockPalette // Устанавливаем корневым элементом палитру блоков
     });
 
     // Наблюдаем за всеми заголовками категорий
@@ -681,16 +465,72 @@ function setupCategoryScrollTracking() {
         observer.observe(title);
     });
 
-    // Добавляем обработчик прокрутки для сброса флага isScrolling
+    // Добавляем обработчики для определения пользовательской прокрутки
     blockPalette.addEventListener('scroll', () => {
-        if (scrollTimeout) {
-            clearTimeout(scrollTimeout);
-        }
-        isScrolling = true;
+         isUserScrolling = true;
+        // Сбрасываем флаг через 100мс после последнего события прокрутки
+        clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
-            isScrolling = false;
-        }, 150);
-    }, { passive: true });
+            isUserScrolling = false;
+            // После окончания прокрутки проверяем видимость
+            // Это может помочь в случае, когда IntersectionObserver пропустил финальное состояние
+            checkVisibleCategoryOnScrollEnd();
+        }, 100);
+    });
+
+     // Добавляем обработчики для колесика мыши и касаний, которые также устанавливают isUserScrolling
+     blockPalette.addEventListener('wheel', () => { isUserScrolling = true; });
+     blockPalette.addEventListener('touchstart', () => { isUserScrolling = true; });
+     blockPalette.addEventListener('touchend', () => {
+         // Сброс флага isUserScrolling будет происходить по таймауту scroll
+     });
+
+    // Функция для принудительной проверки видимой категории после окончания прокрутки
+    function checkVisibleCategoryOnScrollEnd() {
+        if (isInitialLoad || isUserScrolling) return; // Не проверяем, если еще загрузка или идет прокрутка
+
+        let mostVisibleEntry = null;
+        let maxVisibility = 0;
+
+        document.querySelectorAll('.category-title').forEach(title => {
+            const rect = title.getBoundingClientRect();
+            const containerRect = blockPalette.getBoundingClientRect();
+
+             // Видимая область в контейнере прокрутки
+            const visibleTop = Math.max(containerRect.top, rect.top);
+            const visibleBottom = Math.min(containerRect.bottom, rect.bottom);
+            const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+            const elementHeight = rect.height;
+
+            const visibilityPercent = (elementHeight > 0) ? (visibleHeight / elementHeight) * 100 : 0;
+
+            if (visibilityPercent > maxVisibility) {
+                maxVisibility = visibilityPercent;
+                mostVisibleEntry = title;
+            }
+        });
+
+        if (mostVisibleEntry && maxVisibility > 0 && mostVisibleEntry.dataset.category !== activeCategory) {
+            const category = mostVisibleEntry.dataset.category;
+            console.log(`Scroll end check: Activating category: ${category}`);
+            categories.forEach(cat => {
+                if (cat.dataset.category === category) {
+                    cat.classList.add('active');
+                } else {
+                    cat.classList.remove('active');
+                }
+            });
+            activeCategory = category;
+            lastVisibleCategory = category; // Обновляем lastVisibleCategory
+        }
+    }
+
+    // Сбрасываем флаг начальной загрузки после небольшой задержки
+    setTimeout(() => {
+        isInitialLoad = false;
+         // Принудительно проверяем видимую категорию после начальной загрузки
+         checkVisibleCategoryOnScrollEnd();
+    }, 300);
 }
 
 // Create a block in the palette
@@ -2851,44 +2691,67 @@ function createConnectionGhost(sourceBlock, targetBlock, position) {
  * Проверяет, находится ли мышь в области возможного соединения блоков
  * @param {HTMLElement} draggedBlock - Перетаскиваемый блок
  * @param {HTMLElement} targetBlock - Целевой блок
- * @param {number} mouseX - X-координата мыши
- * @param {number} mouseY - Y-координата мыши
+ * @param {number} mouseX - X-координата мыши (координаты окна)
+ * @param {number} mouseY - Y-координата мыши (координаты окна)
  * @returns {Object} Объект с информацией о соединении { canConnect: boolean, position: 'top'|'bottom'|null }
  */
 function isInConnectionArea(draggedBlock, targetBlock, mouseX, mouseY) {
     const targetRect = targetBlock.getBoundingClientRect();
     const draggedRect = draggedBlock.getBoundingClientRect();
-    
-    // Определяем центры блоков
+
+    // Определяем центральные X-координаты блоков для проверки горизонтального выравнивания
     const targetCenterX = targetRect.left + targetRect.width / 2;
     const draggedCenterX = draggedRect.left + draggedRect.width / 2;
-    
-    // Проверяем горизонтальное выравнивание с небольшой погрешностью
-    const horizontalAlignment = Math.abs(targetCenterX - draggedCenterX) < targetRect.width * 0.3;
-    
-    if (!horizontalAlignment) {
+
+    // Определяем допуск для горизонтального выравнивания (например, 40% ширины целевого блока)
+    const horizontalTolerance = targetRect.width * 0.4;
+
+    // Проверяем горизонтальное выравнивание
+    const horizontallyAligned = Math.abs(targetCenterX - draggedCenterX) < horizontalTolerance;
+
+    if (!horizontallyAligned) {
         return { canConnect: false, position: null };
     }
-    
-    // Определяем небольшие области соединения сверху и снизу
-    const connectionAreaHeight = 20; // Фиксированная высота области соединения
-    
-    // Проверяем, находится ли мышь в верхней области соединения
-    if (mouseY >= targetRect.top - connectionAreaHeight && mouseY <= targetRect.top + connectionAreaHeight) {
-        // Проверяем, что перетаскиваемый блок находится выше целевого
-        if (draggedRect.bottom < targetRect.top) {
-            return { canConnect: true, position: 'top' };
+
+    // Определяем вертикальную область вокруг целевого блока, где возможно соединение
+    const verticalBuffer = 40; // Буфер в пикселях выше и ниже целевого блока
+    const connectionZoneTop = targetRect.top - verticalBuffer;
+    const connectionZoneBottom = targetRect.bottom + verticalBuffer;
+
+    // Проверяем, находится ли курсор мыши в вертикальной области соединения
+    const mouseInVerticalZone = mouseY >= connectionZoneTop && mouseY <= connectionZoneBottom;
+
+    if (mouseInVerticalZone) {
+        // Если курсор в зоне и блоки горизонтально выровнены, проверяем, куда можно подключить
+
+        // Определяем, находится ли перетаскиваемый блок выше целевого
+        const isAboveTarget = draggedRect.bottom < targetRect.top + 15; // Допуск 15px
+
+        // Определяем, находится ли перетаскиваемый блок ниже целевого
+        const isBelowTarget = draggedRect.top > targetRect.bottom - 15; // Допуск 15px
+
+        // Если перетаскиваемый блок выше целевого и его нижняя часть близка к верху целевого
+        if (isAboveTarget && Math.abs(draggedRect.bottom - targetRect.top) < verticalBuffer + 15) {
+             // Проверяем, что целевой блок может принимать соединение сверху
+            if (targetBlock.classList.contains('can-connect-top')) {
+                 // Предлагаем соединение с верхом целевого блока
+                return { canConnect: true, position: 'top' };
+             }
+        }
+
+        // Если перетаскиваемый блок ниже целевого и его верхняя часть близка к низу целевого
+        if (isBelowTarget && Math.abs(draggedRect.top - targetRect.bottom) < verticalBuffer + 15) {
+             // Проверяем, что целевой блок может отдавать соединение снизу
+             // (или что перетаскиваемый блок может принимать соединение сверху, но это уже проверено выше)
+             // Здесь логичнее проверить, может ли целевой блок отдавать соединение вниз
+            if (targetBlock.classList.contains('can-connect-bottom')) {
+                 // Предлагаем соединение с низом целевого блока
+                return { canConnect: true, position: 'bottom' };
+             }
         }
     }
-    
-    // Проверяем, находится ли мышь в нижней области соединения
-    if (mouseY >= targetRect.bottom - connectionAreaHeight && mouseY <= targetRect.bottom + connectionAreaHeight) {
-        // Проверяем, что перетаскиваемый блок находится ниже целевого
-        if (draggedRect.top > targetRect.bottom) {
-            return { canConnect: true, position: 'bottom' };
-        }
-    }
-    
+
+    // Если ни одно условие не выполнено, соединение невозможно
     return { canConnect: false, position: null };
 }
 

@@ -99,7 +99,7 @@ body {
 }
 
 .category:hover:not(.active) {
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.6);
     border-radius: 10px;
     width: calc(100% - 8px);
     transform: translateX(8px);
@@ -178,14 +178,14 @@ body {
 }
 
 .category[data-category="math"].active {
-    background-color: rgba(73, 195, 73, 1);
+    background-color: rgb(54, 189, 54);
     color: #eae3dc;
     box-shadow: 0 2px 5px rgba(69, 159, 16, 0.3);
     pointer-events: none;
 }
 
 .category[data-category="control"].active {
-    background-color: rgb(239, 156, 14);
+    background-color: rgb(255, 162, 0);
     color: #eae3dc;
     box-shadow: 0 2px 5px rgba(255, 183, 0, 0.3);
     pointer-events: none;
