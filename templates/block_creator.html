@@ -6,23 +6,20 @@
         <title>Создание блоков - Scratch2</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/block_creator.css') }}">
     </head>
     <body>
         <div class="scratch-app">
             <header class="header">
-                <a href="/Scratch2/main" class="logo">Scratch2</a>
+                <div class="logo">Scratch2</div>
                 <div class="menu">
-                    <button class="menu-btn">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 5.14V19.14L19 12.14L8 5.14Z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-                        </svg>
-                        <span>Компилировать</span>
-                    </button>
+                    <a href="/" class="menu-btn">Главная</a>
                     <button class="menu-btn">Файл</button>
+                    <button class="menu-btn">Правка</button>
                     <a href="/libraries" class="menu-btn">Библиотеки</a>
-                    <a href="/block-creator" class="menu-btn">Создание блоков</a>
+                    <button class="menu-btn active">Создание блоков</button>
                     <button class="menu-btn">Справка</button>
                 </div>
             </header>
@@ -32,20 +29,25 @@
                     <form id="block-creator-form">
                         <div class="form-group">
                             <label for="block-name">Название блока:</label>
-                            <input type="text" id="block-name" required>
+                            <input type="text" id="block-name" required placeholder="Например: Переместить мышь">
                         </div>
+                        
                         <div class="form-group">
                             <label for="block-category">Категория:</label>
-                            <select id="block-category" required>
-                                <option value="start">Запуск</option>
-                                <option value="mouse">Управление мышью</option>
-                                <option value="keyboard">Управление клавиатурой</option>
-                                <option value="vision">Компьютерное зрение</option>
-                                <option value="voice">Голосовые команды</option>
-                                <option value="math">Мат операции</option>
-                                <option value="control">Управление</option>
-                            </select>
+                            <div class="category-selector">
+                                <select id="block-category" required>
+                                    <option value="start">Запуск</option>
+                                    <option value="mouse">Управление мышью</option>
+                                    <option value="keyboard">Управление клавиатурой</option>
+                                    <option value="vision">Компьютерное зрение</option>
+                                    <option value="voice">Голосовые команды</option>
+                                    <option value="math">Мат операции</option>
+                                    <option value="control">Управление</option>
+                                </select>
+                                <button type="button" class="add-category-btn" id="add-category-btn">+</button>
+                            </div>
                         </div>
+                        
                         <div class="form-group">
                             <label for="block-type">Тип блока:</label>
                             <select id="block-type" required>
@@ -54,31 +56,120 @@
                                 <option value="loop">Цикл</option>
                             </select>
                         </div>
+                        
                         <div class="form-group">
-                            <label for="block-color">Цвет блока:</label>
-                            <input type="color" id="block-color" value="#4d97ff" required>
+                            <label>Форма блока:</label>
+                            <div class="block-shape-group">
+                                <div class="shape-option selected" data-shape="action">
+                                    <svg viewBox="0 0 130 50" fill="none">
+                                        <path d="M3 42.0001C1.89543 42.0001 1 41.1046 1 40.0001V3.00001C1 1.89544 1.89544 1 3.00001 1.00001L11.2117 1.00006C11.7183 1.00006 12.206 1.1923 12.5763 1.53795L18.9237 7.46217C19.294 7.80782 19.7817 8.00006 20.2883 8.00006H31.6716C32.202 8.00006 32.7107 7.78935 33.0858 7.41427L38.9142 1.58585C39.2893 1.21077 39.798 1.00006 40.3284 1.00006L127 1C128.105 1 129 1.89543 129 3V40.0001C129 41.1046 128.105 42.0001 127 42.0001H3Z" fill="#4d97ff" stroke="#0A3AA8"/>
+                                    </svg>
+                                </div>
+                                <div class="shape-option" data-shape="condition">
+                                    <svg viewBox="0 0 47 13" fill="none">
+                                        <path d="M0.703617 6.5L6.64425 0.5H40.5462L46.3069 6.5L40.5462 12.5H6.64425L0.703617 6.5Z" fill="#459F10" stroke="#077D60"/>
+                                    </svg>
+                                </div>
+                                <div class="shape-option" data-shape="loop">
+                                    <svg viewBox="0 0 130 115" fill="none">
+                                        <path d="M1 42.0001V3.00001C1 1.89544 1.89544 1 3.00001 1.00001L11.2117 1.00006C11.7183 1.00006 12.206 1.1923 12.5763 1.53795L18.9237 7.46217C19.294 7.80782 19.7817 8.00006 20.2883 8.00006H31.6716C32.202 8.00006 32.7107 7.78935 33.0858 7.41427L38.9142 1.58585C39.2893 1.21077 39.798 1.00006 40.3284 1.00006L127 1C128.105 1 129 1.89543 129 3V40.0001C129 41.1046 128.105 42.0001 127 42.0001H54.3284C53.798 42.0001 53.2893 42.2108 52.9142 42.5858L47.0858 48.4143C46.7107 48.7893 46.202 49.0001 45.6716 49.0001H34.2883C33.7817 49.0001 33.294 48.8078 32.9237 48.4622L26.5763 42.538C26.206 42.1923 25.7183 42.0001 25.2117 42.0001H14C12.8954 42.0001 12 42.8955 12 44.0001V64C12 65.1046 12.8954 66 14 66L25.2117 66.0001C25.7183 66.0001 26.206 66.1923 26.5763 66.5379L32.9237 72.4622C33.294 72.8078 33.7817 73.0001 34.2883 73.0001H45.6716C46.202 73.0001 46.7107 72.7893 47.0858 72.4143L52.9142 66.5858C53.2893 66.2108 53.798 66.0001 54.3284 66.0001L127 66C128.105 66 129 66.8954 129 68V105C129 106.105 128.105 107 127 107H3C1.89543 107 1 106.105 1 105V66V42.0001Z" fill="#FFB700" stroke="#8F5F00"/>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
+                        
                         <div class="form-group">
-                            <label for="block-inputs">Входные параметры:</label>
-                            <div id="block-inputs-container">
+                            <label>Цвет блока:</label>
+                            <div class="color-picker-group">
+                                <input type="color" id="block-color" value="#4d97ff" required>
+                                <div class="color-preview" id="color-preview"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Входные параметры:</label>
+                            <div class="input-parameters">
+                                <div id="block-inputs-container">
+                                    <!-- Параметры будут добавляться динамически -->
+                                </div>
                                 <button type="button" class="add-input-btn">Добавить параметр</button>
                             </div>
                         </div>
-                        <div class="form-actions">
-                            <button type="submit" class="save-block-btn">Сохранить блок</button>
-                            <button type="button" class="preview-block-btn">Предпросмотр</button>
+
+                        <div class="block-logic-editor">
+                            <div class="logic-editor-header">
+                                <h4>Логика блока</h4>
+                                <div class="logic-type-selector">
+                                    <button type="button" class="logic-type-btn active" data-type="python">Python</button>
+                                    <button type="button" class="logic-type-btn" data-type="javascript">JavaScript</button>
+                                </div>
+                            </div>
+                            <textarea id="block-logic" class="code-editor" placeholder="// Введите код для выполнения блока&#10;// Доступные переменные:&#10;// - inputs: словарь с входными параметрами&#10;// - context: контекст выполнения&#10;// - result: для возврата результата"></textarea>
                         </div>
+                        
                     </form>
                     
                     <div class="block-preview">
-                        <h3>Предпросмотр блока</h3>
+                        <div class="block-preview-header">
+                            <h3>Предпросмотр блока</h3>
+                            <div class="preview-actions">
+                                <button type="button" class="preview-block-btn">Обновить предпросмотр</button>
+                                <button type="submit" class="save-block-btn">Сохранить блок</button>
+                            </div>
+                        </div>
                         <div id="preview-container">
                             <!-- Здесь будет отображаться предпросмотр блока -->
+                        </div>
+                        <div class="block-documentation">
+                            <h4>Документация блока</h4>
+                            <div class="documentation-content">
+                                <p class="block-description">Описание блока появится здесь после заполнения формы.</p>
+                                <div class="block-parameters">
+                                    <h5>Параметры:</h5>
+                                    <ul id="parameters-list">
+                                        <!-- Список параметров будет добавлен динамически -->
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </main>
         </div>
+
+        <!-- Модальное окно создания категории -->
+        <div class="modal" id="category-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Создание новой категории</h3>
+                    <button type="button" class="close-modal-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="category-form">
+                        <div class="form-group">
+                            <label for="category-name">Название категории:</label>
+                            <input type="text" id="category-name" required placeholder="Например: Работа с файлами">
+                        </div>
+                        <div class="form-group">
+                            <label for="category-color">Цвет категории:</label>
+                            <div class="color-picker-group">
+                                <input type="color" id="category-color" value="#4d97ff" required>
+                                <div class="color-preview" id="category-color-preview"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="category-description">Описание:</label>
+                            <textarea id="category-description" placeholder="Опишите назначение категории"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="save-category-btn">Создать категорию</button>
+                            <button type="button" class="cancel-category-btn">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <script type="module" src="{{ url_for('static', filename='js/block_creator.js') }}"></script>
     </body>
 </html> 

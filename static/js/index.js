@@ -541,61 +541,156 @@ function createCategories() {
     ];
     
     categoryData.forEach(cat => {
+        if (cat.id == 'start'){
+            const categoryElement = document.createElement('div');
+            categoryElement.className = 'category';
+            categoryElement.dataset.category = cat.id;
+            categoryElement.textContent = cat.name;
+            categoryElement.classList.add('active');
+            categoriesContainer.appendChild(categoryElement);
+        }
+        else{
         const categoryElement = document.createElement('div');
         categoryElement.className = 'category';
         categoryElement.dataset.category = cat.id;
         categoryElement.textContent = cat.name;
         categoriesContainer.appendChild(categoryElement);
+        }
     });
+
 }
 
 // Select a category and display its blocks
 function selectCategory(categoryName) {
-    // Удаляем активный класс со всех категорий
-    categories.forEach(cat => cat.classList.remove('active'));
-    
-    // Добавляем активный класс выбранной категории
-    const selectedCategory = document.querySelector(`.category[data-category="${categoryName}"]`);
-    if (selectedCategory) {
-        selectedCategory.classList.add('active');
+    // Проверяем, не является ли категория уже активной
+    if (activeCategory === categoryName) {
+        return;
     }
-    
+
     // Обновляем активную категорию
+    categories.forEach(cat => {
+        if (cat.dataset.category === categoryName) {
+            cat.classList.add('active');
+        } else {
+            cat.classList.remove('active');
+        }
+    });
     activeCategory = categoryName;
-    
+
     // Очищаем палитру блоков
     blockPalette.innerHTML = '';
-    
-    // Добавляем блоки для выбранной категории
-    const categoryBlocks = blockDefinitions[categoryName];
-    if (categoryBlocks) {
-        // Обрабатываем каждый раздел в категории
-        Object.keys(categoryBlocks).forEach(section => {
-            if (categoryBlocks[section].length > 0) {
-                // Добавляем заголовок раздела
-                const sectionTitle = document.createElement('div');
-                sectionTitle.className = 'section-title';
-                
-                // Отображаемые названия разделов
-                const sectionNames = {
-                    'actions': 'Действия',
-                    'info': 'Информация',
-                    'boolean': 'Boolean',
-                    'numbers': 'Числа',
-                    'logical': 'Логические',
-                    'string': 'Строки'
-                };
-                
-                sectionTitle.textContent = sectionNames[section] || section;
-                blockPalette.appendChild(sectionTitle);
-                
-                // Добавляем блоки для этого раздела
-                categoryBlocks[section].forEach(block => {
-                    createBlockInPalette(block);
-                });
-            }
+
+    // Словарь с отображаемыми названиями категорий
+    const categoryNames = {
+        'start': 'Запуск',
+        'mouse': 'Управление мышью',
+        'keyboard': 'Управление клавиатурой',
+        'vision': 'Компьютерное зрение',
+        'voice': 'Голосовые команды',
+        'math': 'Математические операции',
+        'control': 'Управление'
+    };
+
+    // Добавляем все категории и их блоки
+    Object.keys(blockDefinitions).forEach(category => {
+        const categoryTitle = document.createElement('div');
+        categoryTitle.className = 'category-title';
+        categoryTitle.textContent = categoryNames[category] || category;
+        categoryTitle.dataset.category = category;
+        blockPalette.appendChild(categoryTitle);
+        
+        // Добавляем блоки для этой категории
+        const categoryBlocks = blockDefinitions[category];
+        if (categoryBlocks) {
+            Object.values(categoryBlocks).forEach(section => {
+                if (Array.isArray(section)) {
+                    section.forEach(block => {
+                        createBlockInPalette(block);
+                    });
+                }
+            });
+        }
+    });
+
+    // Добавляем обработчик прокрутки для отслеживания видимости категорий
+    setupCategoryScrollTracking();
+
+    // Плавно прокручиваем к выбранной категории
+    const targetCategory = document.querySelector(`.category-title[data-category="${categoryName}"]`);
+    if (targetCategory) {
+        requestAnimationFrame(() => {
+            const scrollTop = targetCategory.offsetTop - blockPalette.offsetTop - 10;
+            blockPalette.scrollTo({
+                top: scrollTop,
+                behavior: 'smooth'
+            });
         });
     }
+}
+
+// Функция для отслеживания видимости категорий при прокрутке
+function setupCategoryScrollTracking() {
+    let lastVisibleCategory = null;
+    let scrollTimeout = null;
+    let isScrolling = false;
+
+    const observer = new IntersectionObserver((entries) => {
+        if (isScrolling) return;
+
+        // Находим наиболее видимую категорию
+        let mostVisibleEntry = null;
+        let maxVisibility = 0;
+
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const visibility = entry.intersectionRatio;
+                if (visibility > maxVisibility) {
+                    maxVisibility = visibility;
+                    mostVisibleEntry = entry;
+                }
+            }
+        });
+
+        // Если нашли видимую категорию и она отличается от текущей
+        if (mostVisibleEntry && mostVisibleEntry.target.dataset.category !== activeCategory) {
+            const category = mostVisibleEntry.target.dataset.category;
+            
+            // Очищаем предыдущий таймаут, если он есть
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+
+            scrollTimeout = setTimeout(() => {
+                if (category !== lastVisibleCategory) {
+                    isScrolling = true;
+                    selectCategory(category);
+                    lastVisibleCategory = category;
+                    setTimeout(() => {
+                        isScrolling = false;
+                    }, 300); // Время анимации прокрутки
+                }
+            }, 100);
+        }
+    }, {
+        threshold: [0, 0.25, 0.5, 0.75, 1],
+        rootMargin: '-10% 0px -10% 0px'
+    });
+
+    // Наблюдаем за всеми заголовками категорий
+    document.querySelectorAll('.category-title').forEach(title => {
+        observer.observe(title);
+    });
+
+    // Добавляем обработчик прокрутки для сброса флага isScrolling
+    blockPalette.addEventListener('scroll', () => {
+        if (scrollTimeout) {
+            clearTimeout(scrollTimeout);
+        }
+        isScrolling = true;
+        scrollTimeout = setTimeout(() => {
+            isScrolling = false;
+        }, 150);
+    }, { passive: true });
 }
 
 // Create a block in the palette
