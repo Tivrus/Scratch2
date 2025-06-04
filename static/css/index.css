@@ -67,17 +67,18 @@ body {
 /* Main Content */
 .main-content {
     display: grid;
-    grid-template-columns: 180px 220px 1fr 320px;
+    grid-template-columns: 65px 220px 1fr 320px;
     grid-template-rows: 1fr;
     flex: 1;
     overflow: hidden;
     height: calc(100vh - 60px);
+    gap: 0;
 }
 
 /* Block Categories */
 .block-categories {
     position: relative;
-    width: 60px;
+    width: 65px;
     background-color: #f5f5f5;
     border-right: 1px solid #e0e0e0;
     overflow-y: auto;
@@ -86,6 +87,15 @@ body {
     flex-direction: column;
     align-items: center;
     z-index: 1;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    scroll-behavior: smooth;
+}
+
+/* Скрываем скроллбар в WebKit */
+.block-categories::-webkit-scrollbar {
+    width: 0;
+    display: none;
 }
 
 .categories-wrapper {
@@ -108,13 +118,12 @@ body {
     cursor: pointer;
     width: 100%;
     transition: background 0.18s, color 0.18s;
-    margin-bottom: 2px;
+    margin: 0;
 }
 
 .category:last-child {
     margin-bottom: 0;
 }
-
 
 .category:hover .category-label {
     color: #4C97FF;
@@ -123,7 +132,7 @@ body {
 .category-circle {
     width: 1.25rem;
     height: 1.25rem;
-    border: 1px solid;
+    border: 2px solid;
     border-radius: 100%;
     margin: 0 auto 0.125rem;
     flex-shrink: 0;
@@ -141,32 +150,21 @@ body {
     transition: color 0.18s;
 }
 
-/* Цвета кругов для категорий */
-.category[data-category="start"] .category-circle { background: #ffb700; border-color: #ffb700; }
-.category[data-category="mouse"] .category-circle { background: #0bcba2; border-color: #0bcba2; }
-.category[data-category="keyboard"] .category-circle { background: #3085fc; border-color: #3085fc; }
-.category[data-category="vision"] .category-circle { background: #dd3a08; border-color: #dd3a08; }
-.category[data-category="voice"] .category-circle { background: #7e41f9; border-color: #7e41f9; }
-.category[data-category="math"] .category-circle { background: #49c349; border-color: #49c349; }
-.category[data-category="control"] .category-circle { background: #ff7300; border-color: #ff7300; }
-.category[data-category="variables"] .category-circle { background: #ff9900; border-color: #ff9900; }
-.category[data-category="custom"] .category-circle { background: #ff5c8d; border-color: #ff5c8d; }
-
 /* Удаляем старые стили категорий */
 .category[data-category].active {
-        background: #dbe0e3;
-        border-radius: 0px;
+    background: #dbe0e3;
+    border-radius: 0px;
 }
 
 .category-title { display: none !important; }
 
 /* Blocks Palette */
 .blocks-palette {
-    border-right: 1px solid #e0e0e0;
     padding: 15px;
+    background-color: #f8fafc;
+    height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
 /* Category and Section Titles */
@@ -182,37 +180,21 @@ body {
 
 .category-title[data-category="start"] {
     color: rgb(255, 140, 26);
-    border-bottom-color: rgba(255, 140, 26, 0.3);
+    border-bottom-color: #ff8c1a4d;
 }
 
-.category-title[data-category="mouse"] {
-    color: rgb(11, 203, 162);
-    border-bottom-color: rgba(11, 203, 162, 0.3);
-}
-
-.category-title[data-category="keyboard"] {
-    color: rgb(48, 133, 252);
-    border-bottom-color: rgba(48, 133, 252, 0.3);
-}
-
-.category-title[data-category="vision"] {
-    color: rgb(213, 1, 1);
-    border-bottom-color: rgba(213, 1, 1, 0.3);
-}
-
-.category-title[data-category="voice"] {
-    color: rgb(126, 65, 249);
-    border-bottom-color: rgba(126, 65, 249, 0.3);
-}
-
-.category-title[data-category="math"] {
-    color: rgb(73, 195, 73);
-    border-bottom-color: rgba(73, 195, 73, 0.3);
-}
-
-.category-title[data-category="control"] {
-    color: rgb(239, 156, 14);
-    border-bottom-color: rgba(239, 156, 14, 0.3);
+.category-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    backdrop-filter: blur(5px);
 }
 
 .blocks-palette .block {
@@ -586,8 +568,6 @@ body {
     transform: none;
     box-shadow: none;
 }
-
-
 
 .blocks-palette .block:active {
     cursor: grabbing;
@@ -1456,7 +1436,7 @@ select.dropdown-input {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
     cursor: pointer;
     transition: all 0.2s ease;
     text-decoration: none; /* Убираем подчеркивание ссылки */
@@ -1473,13 +1453,11 @@ select.dropdown-input {
 }
 .libraries-btn:hover {
     background-color: #9e7edf;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
     transform: scale(1.05);
     text-decoration: none; /* Убираем подчеркивание при наведении */
 }
 .libraries-btn:active {
     transform: scale(0.95);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 .libraries-btn-icon {
     width: 28px;

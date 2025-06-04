@@ -1,0 +1,52 @@
+{
+    "categories": [
+        {
+            "id": "start",
+            "name": "События",
+            "color": "#FFB700",
+            "borderColor": "#ff8c1a4d"
+        },
+        {
+            "id": "mouse",
+            "name": "Мышь",
+            "color": "#0BCBA2",
+            "borderColor": "#0bcba24d"
+        },
+        {
+            "id": "keyboard",
+            "name": "Клавиатура",
+            "color": "#3085FC",
+            "borderColor": "#3085fc4d"
+        },
+        {
+            "id": "vision",
+            "name": "Компьютерное зрение",
+            "color": "#DD3A08",
+            "borderColor": "#d501014d"
+        },
+        {
+            "id": "voice",
+            "name": "Голосовые команды",
+            "color": "#7E41F9",
+            "borderColor": "#7e41f94d"
+        },
+        {
+            "id": "math",
+            "name": "Операторы",
+            "color": "#49C349",
+            "borderColor": "#49c3494d"
+        },
+        {
+            "id": "control",
+            "name": "Управление",
+            "color": "#FF7300",
+            "borderColor": "#ef9c0e4d"
+        },
+        {
+            "id": "variables",
+            "name": "Переменные",
+            "color": "#FF9900",
+            "borderColor": "#ef9c0e4d"
+        }
+    ]
+} 

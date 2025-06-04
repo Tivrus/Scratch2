@@ -7,7 +7,7 @@ document.documentElement.style.setProperty('--base-z-index', BASE_Z_INDEX);
 // Функция для загрузки определений блоков
 async function loadBlockDefinitions() {
     try {
-        const response = await fetch('/static/js/blockTypes.json');
+        const response = await fetch('/static/data/blockTypes.json');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -18,7 +18,7 @@ async function loadBlockDefinitions() {
         
         // Для каждой категории
         Object.entries(data.categories).forEach(([category, types]) => {
-            blockDefinitions[category] = {};
+            blockDefinitions[category] = [];
             
             // Для каждого типа блока в категории
             Object.entries(types).forEach(([type, blocks]) => {
@@ -36,28 +36,28 @@ async function loadBlockDefinitions() {
                     case 'info':
                         blockColor = 'blue';
                         break;
+                    case 'control':
+                        blockColor = 'yellow';
+                        break;
+                    default:
+                        blockColor = 'blue';
                 }
                 
-                // Добавляем блоки в соответствующую секцию
-                if (blocks.length > 0) {
-                    if (type === 'numbers' || type === 'logical' || type === 'string') {
-                        if (!blockDefinitions[category].math) {
-                            blockDefinitions[category].math = {};
-                        }
-                        blockDefinitions[category].math[type] = blocks.map(block => ({
+                // Добавляем блоки в категорию
+                if (Array.isArray(blocks)) {
+                    blocks.forEach(block => {
+                        blockDefinitions[category].push({
                             ...block,
                             type: blockColor
-                        }));
-                    } else {
-                        blockDefinitions[category][type] = blocks.map(block => ({
-                            ...block,
-                            type: blockColor
-                        }));
-                    }
+                        });
+                    });
                 }
             });
         });
         
+        console.log("Block definitions loaded:", blockDefinitions);
+        // Сохраняем определения блоков в глобальную переменную
+        window.blockDefinitions = blockDefinitions;
         return blockDefinitions;
     } catch (error) {
         console.error('Error loading block definitions:', error);
@@ -65,11 +65,11 @@ async function loadBlockDefinitions() {
     }
 }
 
-// DOM elements
+// DOM elements and global variables
 let activeCategory = null;
 let scriptWorkspace;
 let blockPalette;
-let categories;
+let categories = [];
 let mouseCursor;
 let mouseCoordinates;
 let keyboardVisualization;
@@ -81,6 +81,9 @@ let dragOffsetX = 0;
 let dragOffsetY = 0;
 let blockChain = [];
 let blockDefinitions = {}; // Будет заполнено после загрузки
+let categoryData = null;
+let isInitialLoad = true;
+let isUserScrolling = false;
 
 // Execution variables and utilities
 let isRunning = false;
@@ -99,21 +102,201 @@ const BASE_BLOCK_WIDTH = 170; // Базовая ширина блока
 let activeDragBlock = null;
 let dragBlockZIndex = 10000; // Базовый z-index для перетаскивания
 
-// Добавляем флаг для контроля автоматической активации категорий
-let isInitialLoad = true;
-let isUserScrolling = false;
+// Загрузка данных категорий
+async function loadCategoryData() {
+    try {
+        const response = await fetch('/static/data/categories.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        categoryData = data.categories;
+        console.log("Category data loaded successfully");
+        return true;
+    } catch (error) {
+        console.error("Error loading category data:", error);
+        return false;
+    }
+}
+
+// Создание категорий
+async function createCategories() {
+    console.log("Starting category creation");
+    
+    const categoriesContainer = document.querySelector('.block-categories');
+    const blocksPalette = document.querySelector('.blocks-palette');
+    const librariesBtnContainer = document.querySelector('.libraries-btn');
+    
+    if (!categoriesContainer || !blocksPalette) {
+        console.error("Required containers not found");
+        return;
+    }
+    
+    // Сохраняем кнопку библиотек
+    if (librariesBtnContainer) {
+        librariesBtnContainer.remove();
+    }
+    
+    // Очищаем контейнеры
+    categoriesContainer.innerHTML = '';
+    blocksPalette.innerHTML = '';
+    
+    // Добавляем кнопку библиотек обратно
+    if (librariesBtnContainer) {
+        categoriesContainer.appendChild(librariesBtnContainer);
+    }
+    
+    // Создаем обертку для категорий
+    const categoriesWrapper = document.createElement('div');
+    categoriesWrapper.className = 'categories-wrapper';
+    
+    console.log("Category data:", categoryData);
+    
+    if (!categoryData || !Array.isArray(categoryData)) {
+        console.error("Invalid category data:", categoryData);
+        return;
+    }
+
+    // Создаем все категории в боковой панели
+    categoryData.forEach(cat => {
+        console.log("Creating category:", cat);
+        const categoryElement = document.createElement('div');
+        categoryElement.className = 'category';
+        categoryElement.dataset.category = cat.id;
+        if (cat.id === 'start') categoryElement.classList.add('active');
+        
+        // Создаем круг для категории
+        const circle = document.createElement('div');
+        circle.className = 'category-circle';
+        circle.style.backgroundColor = cat.color;
+        circle.style.borderColor = cat.borderColor;
+        categoryElement.appendChild(circle);
+        
+        // Создаем метку категории
+        const label = document.createElement('div');
+        label.className = 'category-label';
+        label.textContent = cat.name;
+        categoryElement.appendChild(label);
+        
+        // Добавляем обработчик клика
+        categoryElement.addEventListener('click', () => {
+            // Убираем активный класс у всех категорий
+            document.querySelectorAll('.category').forEach(cat => {
+                cat.classList.remove('active');
+            });
+            // Добавляем активный класс выбранной категории
+            categoryElement.classList.add('active');
+            
+            // Прокручиваем к соответствующей секции блоков
+            const categorySection = blocksPalette.querySelector(`.category-section[data-category="${cat.id}"]`);
+            if (categorySection) {
+                categorySection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+        
+        categoriesWrapper.appendChild(categoryElement);
+    });
+    
+    // Добавляем категории перед кнопкой библиотек
+    if (librariesBtnContainer) {
+        categoriesContainer.insertBefore(categoriesWrapper, librariesBtnContainer);
+    } else {
+        categoriesContainer.appendChild(categoriesWrapper);
+    }
+    
+    // Обновляем глобальный массив категорий
+    categories = Array.from(categoriesWrapper.querySelectorAll('.category'));
+    
+    // Создаем все секции блоков в палитре
+    categoryData.forEach(cat => {
+        // Создаем секцию для категории
+        const categorySection = document.createElement('div');
+        categorySection.className = 'category-section';
+        categorySection.dataset.category = cat.id;
+        
+        // Добавляем заголовок категории
+            const categoryTitle = document.createElement('div');
+            categoryTitle.className = 'category-title';
+        categoryTitle.textContent = cat.name;
+        categoryTitle.dataset.category = cat.id;
+        categorySection.appendChild(categoryTitle);
+        
+        // Добавляем блоки для категории
+        if (window.blockDefinitions && window.blockDefinitions[cat.id] && Array.isArray(window.blockDefinitions[cat.id])) {
+            console.log(`Creating blocks for category ${cat.id}:`, window.blockDefinitions[cat.id]);
+            window.blockDefinitions[cat.id].forEach(blockData => {
+                console.log("Creating block:", blockData);
+                const block = createBlockInPalette(blockData, cat.id);
+                if (block) {
+                    categorySection.appendChild(block);
+                }
+            });
+        } else {
+            console.warn(`No block definitions found for category ${cat.id}`);
+        }
+        
+        blocksPalette.appendChild(categorySection);
+    });
+    
+    // Добавляем обработчик прокрутки для автоматического переключения категорий
+    blocksPalette.addEventListener('scroll', () => {
+        const sections = blocksPalette.querySelectorAll('.category-section');
+        let currentSection = null;
+        
+        // Находим текущую видимую секцию
+        sections.forEach(section => {
+            const rect = section.getBoundingClientRect();
+            const paletteRect = blocksPalette.getBoundingClientRect();
+            
+            // Если секция видна в верхней части палитры
+            if (rect.top >= paletteRect.top && rect.top <= paletteRect.top + paletteRect.height / 2) {
+                currentSection = section;
+            }
+        });
+        
+        // Если нашли текущую секцию, обновляем активную категорию
+        if (currentSection) {
+            const categoryId = currentSection.dataset.category;
+            const categoryElement = categoriesContainer.querySelector(`.category[data-category="${categoryId}"]`);
+            
+            if (categoryElement && !categoryElement.classList.contains('active')) {
+                // Убираем активный класс у всех категорий
+                document.querySelectorAll('.category').forEach(cat => {
+                    cat.classList.remove('active');
+                });
+                // Добавляем активный класс текущей категории
+                categoryElement.classList.add('active');
+            }
+        }
+    });
+    
+    // Автоматически выбираем первую категорию
+    const firstCategory = categoriesWrapper.querySelector('.category');
+    if (firstCategory) {
+        console.log("Selecting first category");
+        firstCategory.click();
+    }
+}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("DOM loaded - starting initialization");
     
-    // Загружаем определения блоков
+    // Загружаем определения блоков и данные категорий
     blockDefinitions = await loadBlockDefinitions();
+    const categoryDataLoaded = await loadCategoryData();
+    
+    if (!categoryDataLoaded) {
+        console.error("Failed to load category data");
+        return;
+    }
+    
+    // Создаем категории
+    await createCategories();
     
     // Инициализация основных элементов
     scriptWorkspace = document.getElementById('scripts-workspace');
     blockPalette = document.querySelector('.blocks-palette');
-    categories = document.querySelectorAll('.category');
     mouseCursor = document.getElementById('mouse-cursor');
     mouseCoordinates = document.getElementById('mouse-coordinates');
     keyboardVisualization = document.getElementById('keyboard-visualization');
@@ -125,66 +308,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Создаем категории и ждем их создания
-    createCategories();
-    
-    // Обновляем список категорий после их создания
-    categories = document.querySelectorAll('.category');
-
-    // Устанавливаем обработчики для категорий
-    categories.forEach(category => {
-        category.addEventListener('click', () => selectCategory(category.dataset.category));
-    });
-
-    // Инициализируем блоки для категории start
-    const startCategory = document.querySelector('.category[data-category="start"]');
-    if (startCategory) {
-        // Устанавливаем активную категорию
-        activeCategory = 'start';
-        startCategory.classList.add('active');
-        
-        // Очищаем палитру блоков перед добавлением новых
-        blockPalette.innerHTML = '';
-
-        // Загружаем блоки для всех категорий
-        const categoryNames = {
-            'start': 'Запуск',
-            'mouse': 'Управление мышью',
-            'keyboard': 'Управление клавиатурой',
-            'vision': 'Компьютерное зрение',
-            'voice': 'Голосовые команды',
-            'math': 'Математические операции',
-            'control': 'Управление'
-        };
-
-        // Добавляем все категории и их блоки
-        Object.keys(blockDefinitions).forEach(category => {
-            const categoryTitle = document.createElement('div');
-            categoryTitle.className = 'category-title';
-            categoryTitle.textContent = categoryNames[category] || category;
-            categoryTitle.dataset.category = category;
-            blockPalette.appendChild(categoryTitle);
-            
-            // Добавляем блоки для этой категории
-            const categoryBlocks = blockDefinitions[category];
-            if (categoryBlocks) {
-                Object.values(categoryBlocks).forEach(section => {
-                    if (Array.isArray(section)) {
-                        section.forEach(block => {
-                            createBlockInPalette(block);
-                        });
-                    }
-                });
-            }
-        });
-
         // Настраиваем отслеживание прокрутки
         setupCategoryScrollTracking();
         
         // Убираем автоматическую прокрутку при инициализации
         // Просто устанавливаем scrollTop в 0 без анимации
         blockPalette.scrollTop = 0;
-    }
 
     // Set up zoom controls
     document.getElementById('zoom-in').addEventListener('click', () => changeZoom(10));
@@ -250,147 +379,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
-
-// Модифицируем функцию createCategories для добавления отладочной информации
-function createCategories() {
-    console.log("Starting category creation");
-    const categoriesContainer = document.querySelector('.block-categories');
-    
-    if (!categoriesContainer) {
-        console.error("Categories container not found!");
-        return;
-    }
-    
-    // Сохраняем кнопку библиотек
-    const librariesBtnContainer = categoriesContainer.querySelector('.libraries-btn');
-    
-    // Очищаем контейнер, но сохраняем кнопку библиотек
-    categoriesContainer.innerHTML = '';
-    if (librariesBtnContainer) {
-        categoriesContainer.appendChild(librariesBtnContainer);
-    }
-    
-    console.log("Categories container cleared");
-    
-    // Создаем категории
-    const categoryData = [
-        { id: 'start', name: 'События' },
-        { id: 'mouse', name: 'Мышь' },
-        { id: 'keyboard', name: 'Клавиатура' },
-        { id: 'vision', name: 'Компьютерное зрение' },
-        { id: 'voice', name: 'Голосовые команды' },
-        { id: 'math', name: 'Операторы' },
-        { id: 'control', name: 'Управление' }
-    ];
-    
-    // Создаем контейнер для категорий
-    const categoriesWrapper = document.createElement('div');
-    categoriesWrapper.className = 'categories-wrapper';
-    
-    categoryData.forEach(cat => {
-        const categoryElement = document.createElement('div');
-        categoryElement.className = 'category';
-        categoryElement.dataset.category = cat.id;
-        if (cat.id === 'start') categoryElement.classList.add('active');
-
-        // Круглая иконка
-        const circle = document.createElement('span');
-        circle.className = 'category-circle';
-        // Цвет задается через CSS по data-category
-
-        // Текст
-        const label = document.createElement('span');
-        label.className = 'category-label';
-        label.textContent = cat.name;
-
-        categoryElement.appendChild(circle);
-        categoryElement.appendChild(label);
-
-        categoriesWrapper.appendChild(categoryElement);
-    });
-
-    // Добавляем категории перед кнопкой библиотек
-    if (librariesBtnContainer) {
-        categoriesContainer.insertBefore(categoriesWrapper, librariesBtnContainer);
-    } else {
-        categoriesContainer.appendChild(categoriesWrapper);
-    }
-
-}
-
-// Select a category and display its blocks
-function selectCategory(categoryName) {
-    // Проверяем, не является ли категория уже активной
-    if (activeCategory === categoryName) {
-        return;
-    }
-    
-    // Обновляем активную категорию
-    categories.forEach(cat => {
-        if (cat.dataset.category === categoryName) {
-            cat.classList.add('active');
-        } else {
-            cat.classList.remove('active');
-        }
-    });
-    activeCategory = categoryName;
-    
-    // Очищаем палитру блоков
-    blockPalette.innerHTML = '';
-    
-    // Словарь с отображаемыми названиями категорий
-    const categoryNames = {
-        'start': 'Запуск',
-        'mouse': 'Управление мышью',
-        'keyboard': 'Управление клавиатурой',
-        'vision': 'Компьютерное зрение',
-        'voice': 'Голосовые команды',
-        'math': 'Математические операции',
-        'control': 'Управление'
-    };
-
-    // Добавляем все категории и их блоки
-    Object.keys(blockDefinitions).forEach(category => {
-        const categoryTitle = document.createElement('div');
-        categoryTitle.className = 'category-title';
-        categoryTitle.textContent = categoryNames[category] || category;
-        categoryTitle.dataset.category = category;
-        blockPalette.appendChild(categoryTitle);
-                
-        // Добавляем блоки для этой категории
-        const categoryBlocks = blockDefinitions[category];
-        if (categoryBlocks) {
-            Object.entries(categoryBlocks).forEach(([type, blocks]) => {
-                if (type !== 'color' && Array.isArray(blocks)) {
-                    blocks.forEach(block => {
-                        createBlockInPalette(block, category);
-                    });
-                }
-            });
-        }
-    });
-
-    // Пересоздаем отслеживание прокрутки
-    setupCategoryScrollTracking();
-
-    // Прокручиваем к выбранной категории только при явном клике
-    const targetCategory = document.querySelector(`.category-title[data-category="${categoryName}"]`);
-    if (targetCategory) {
-        // Временно отключаем отслеживание прокрутки
-        isUserScrolling = false;
-        
-        const scrollTop = targetCategory.offsetTop - blockPalette.offsetTop - 10;
-        blockPalette.scrollTo({
-            top: scrollTop,
-            behavior: 'smooth'
-        });
-        
-        // Включаем отслеживание прокрутки через время анимации
-        setTimeout(() => {
-            isUserScrolling = true;
-        }, 300);
-    }
-}
 
 // Функция для отслеживания видимости категорий при прокрутке
 function setupCategoryScrollTracking() {
@@ -465,7 +453,7 @@ function setupCategoryScrollTracking() {
                     activeCategory = category;
                     lastVisibleCategory = category;
                 }
-            }, 50);
+            }, 10);
         } else if (mostVisibleEntry) {
              console.log(`Most visible category (${mostVisibleEntry.target.dataset.category}) is already active or has 0% visibility.`);
         } else {
@@ -487,14 +475,14 @@ function setupCategoryScrollTracking() {
     // Добавляем обработчики для определения пользовательской прокрутки
     blockPalette.addEventListener('scroll', () => {
          isUserScrolling = true;
-        // Сбрасываем флаг через 100мс после последнего события прокрутки
+        // Сбрасываем флаг через 10мс после последнего события прокрутки
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
             isUserScrolling = false;
             // После окончания прокрутки проверяем видимость
             // Это может помочь в случае, когда IntersectionObserver пропустил финальное состояние
             checkVisibleCategoryOnScrollEnd();
-        }, 100);
+        }, 10);
     });
 
      // Добавляем обработчики для колесика мыши и касаний, которые также устанавливают isUserScrolling
@@ -549,41 +537,44 @@ function setupCategoryScrollTracking() {
         isInitialLoad = false;
          // Принудительно проверяем видимую категорию после начальной загрузки
          checkVisibleCategoryOnScrollEnd();
-    }, 300);
+    }, 10);
 }
 
 // Create a block in the palette
 function createBlockInPalette(blockData, category) {
-    // Определяем шаблон для использования
-    let templateClass = 'block'; // Базовый класс для всех блоков
+    console.log("Creating block in palette:", { blockData, category });
     
-    // Находим шаблон
-    const template = document.querySelector('.block-templates .' + templateClass) || document.querySelector('.block-templates .block');
-    
+    // Получаем шаблон блока
+    const template = document.querySelector('.block-templates .block');
     if (!template) {
-        console.error("Template not found for", templateClass);
-        return;
+        console.error("Block template not found");
+        return null;
     }
     
     // Клонируем шаблон
     const blockClone = template.cloneNode(true);
+    console.log("Block template cloned");
     
     // Устанавливаем текст
     const textElement = blockClone.querySelector('.block_text');
     if (textElement) {
         textElement.textContent = blockData.text;
+        console.log("Block text set:", blockData.text);
     } else {
         console.error("No .block_text element in template");
+        return null;
     }
     
-    // Добавляем поля ввода, если необходимо
+    // Добавляем входные параметры, если они есть
     if (blockData.inputs && blockData.inputs.length > 0) {
+        console.log("Adding inputs to block:", blockData.inputs);
         addInputsToBlock(blockClone, blockData.inputs, blockData);
     }
     
     // Применяем цвета из JSON и вычисляем цвет обводки
-    if (category && blockDefinitions[category] && blockDefinitions[category].color) {
-        const colors = blockDefinitions[category].color;
+    if (category && window.blockDefinitions[category] && window.blockDefinitions[category].color) {
+        console.log("Applying colors for category:", category);
+        const colors = window.blockDefinitions[category].color;
         const svgPath = blockClone.querySelector('.block-svg path');
         if (svgPath) {
             // Получаем RGB значения из строки цвета
@@ -602,12 +593,18 @@ function createBlockInPalette(blockData, category) {
                 // Применяем цвета
                 svgPath.setAttribute('fill', colors.fill);
                 svgPath.setAttribute('stroke', `rgb(${strokeR}, ${strokeG}, ${strokeB})`);
+                console.log("Colors applied:", { fill: colors.fill, stroke: `rgb(${strokeR}, ${strokeG}, ${strokeB})` });
             } else {
                 // Если не удалось распарсить RGB, используем цвета как есть
                 svgPath.setAttribute('fill', colors.fill);
                 svgPath.setAttribute('stroke', colors.stroke);
+                console.log("Colors applied (fallback):", { fill: colors.fill, stroke: colors.stroke });
             }
+        } else {
+            console.error("No SVG path found in block template");
         }
+    } else {
+        console.warn("No colors found for category:", category);
     }
     
     // Store block data
@@ -657,10 +654,15 @@ function createBlockInPalette(blockData, category) {
         onPaletteBlockMouseDown(e, blockClone);
     });
     
-    // Добавляем в палитру
-    blockPalette.appendChild(blockClone);
+    // Находим секцию категории и добавляем блок в неё
+    const categorySection = document.querySelector(`.category-section[data-category="${category}"]`);
+    if (categorySection) {
+        categorySection.appendChild(blockClone);
+        console.log("Block added to category section:", { blockId: blockClone.id, category });
+    } else {
+        console.error("Category section not found for category:", category);
+    }
     
-    console.log("Created palette block:", blockClone.id, "with text:", blockData.text);
     return blockClone;
 }
 
@@ -2893,4 +2895,78 @@ function checkForConnectionsOnDrop(block) {
     
     // Clear any ghost previews
     clearGhostPreviews();
+}
+
+// Выбор категории и отображение её блоков
+function selectCategory(categoryName) {
+    // Проверяем, не является ли категория уже активной
+    if (activeCategory === categoryName) {
+        return;
+    }
+    
+    // Обновляем активную категорию
+    categories.forEach(cat => {
+        if (cat.dataset.category === categoryName) {
+            cat.classList.add('active');
+        } else {
+            cat.classList.remove('active');
+        }
+    });
+    activeCategory = categoryName;
+    
+    // Очищаем палитру блоков
+    blockPalette.innerHTML = '';
+    
+    // Словарь с отображаемыми названиями категорий
+    const categoryNames = {
+        'start': 'Запуск',
+        'mouse': 'Управление мышью',
+        'keyboard': 'Управление клавиатурой',
+        'vision': 'Компьютерное зрение',
+        'voice': 'Голосовые команды',
+        'math': 'Математические операции',
+        'control': 'Управление'
+    };
+
+    // Добавляем все категории и их блоки
+    Object.keys(window.blockDefinitions).forEach(category => {
+        const categoryTitle = document.createElement('div');
+        categoryTitle.className = 'category-title';
+        categoryTitle.textContent = categoryNames[category] || category;
+        categoryTitle.dataset.category = category;
+        blockPalette.appendChild(categoryTitle);
+                
+        // Добавляем блоки для этой категории
+        const categoryBlocks = window.blockDefinitions[category];
+        if (categoryBlocks) {
+            Object.entries(categoryBlocks).forEach(([type, blocks]) => {
+                if (type !== 'color' && Array.isArray(blocks)) {
+                    blocks.forEach(block => {
+                        createBlockInPalette(block, category);
+                    });
+                }
+            });
+        }
+    });
+
+    // Пересоздаем отслеживание прокрутки
+    setupCategoryScrollTracking();
+
+    // Прокручиваем к выбранной категории только при явном клике
+    const targetCategory = document.querySelector(`.category-title[data-category="${categoryName}"]`);
+    if (targetCategory) {
+        // Временно отключаем отслеживание прокрутки
+        isUserScrolling = false;
+        
+        const scrollTop = targetCategory.offsetTop - blockPalette.offsetTop - 10;
+        blockPalette.scrollTo({
+            top: scrollTop,
+            behavior: 'smooth'
+        });
+        
+        // Включаем отслеживание прокрутки через время анимации
+        setTimeout(() => {
+            isUserScrolling = true;
+        }, 300);
+    }
 }
