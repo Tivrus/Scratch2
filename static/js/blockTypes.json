@@ -1,0 +1,260 @@
+{
+    "categories": {
+        "start": {
+            "color": {
+                "fill": "rgb(255, 87, 34)"
+            },
+            "actions": [
+                {
+                    "text": "Запустить скрипт",
+                    "blockType": "start"
+                }
+            ]
+        },
+        "mouse": {
+            "color": {
+                "fill": "rgb(33, 150, 243)"
+            },
+            "info": [
+                {
+                    "text": "переместить курсор в точку (x, y)",
+                    "inputs": ["x", "y"]
+                },
+                {
+                    "text": "переместить курсор по вертикали на (y)",
+                    "inputs": ["y"]
+                },
+                {
+                    "text": "переместить курсор по горизонтали на (x)",
+                    "inputs": ["x"]
+                },
+                {
+                    "text": "плыть курсором в точку (x, y) в течении (s)",
+                    "inputs": ["x", "y", "s"]
+                },
+                {
+                    "text": "плыть курсором по вертикали на (y) в течении (s)",
+                    "inputs": ["y", "s"]
+                },
+                {
+                    "text": "плыть курсором по горизонтали на (x) в течении (s)",
+                    "inputs": ["x", "s"]
+                },            
+                {
+                    "text": "получить координаты курсора",
+                    "returns": "position"
+                },
+                {
+                    "text": "получить положение курсора по вертикали",
+                    "returns": "y"
+                },
+                {
+                    "text": "получить положение курсора по горизонтали",
+                    "returns": "x"
+                },
+                {
+                    "text": "получить цвет пикселя под курсором",
+                    "returns": "color"
+                }
+            ]
+        },
+        "keyboard": {
+            "color": {
+                "fill": "rgb(156, 39, 176)"
+            },
+            "actions": [
+                {
+                    "text": "Нажать на клавишу (key)",
+                    "blockType": "keyboard",
+                    "inputs": ["key"]
+                },
+                {
+                    "text": "Зажать на клавишу (key)",
+                    "blockType": "keyboard",
+                    "inputs": ["key"]
+                },
+                {
+                    "text": "Отжать клавишу (key)",
+                    "blockType": "keyboard",
+                    "inputs": ["key"]
+                },
+                {
+                    "text": "Зажать на клавишу (key) на (s) секунд",
+                    "blockType": "keyboard",
+                    "inputs": ["key", "s"]
+                },
+                {
+                    "text": "Нажать (hotkey)",
+                    "blockType": "keyboard",
+                    "inputs": ["hotkey"]
+                }
+            ],
+            "logical": [
+                {
+                    "text": "клавиша (key) зажата?",
+                    "inputs": ["key"],
+                    "returns": "boolean"
+                },
+                {
+                    "text": "клавиша (key) была нажата?",
+                    "inputs": ["key"],
+                    "returns": "boolean"
+                },
+                {
+                    "text": "был нажат (hotkey)?",
+                    "inputs": ["hotkey"],
+                    "returns": "boolean"
+                }
+            ]
+        },
+        "vision": {
+            "color": {
+                "fill": "rgb(76, 175, 80)"
+            },
+            "actions": [
+                {
+                    "text": "Найти изображение (image)",
+                    "blockType": "vision",
+                    "inputs": ["image"]
+                },
+                {
+                    "text": "Найти текст (text)",
+                    "blockType": "vision",
+                    "inputs": ["text"]
+                }
+            ],
+            "info": []
+        },
+        "voice": {
+            "color": {
+                "fill": "rgb(255, 152, 0)"
+            },
+            "actions": [
+                {
+                    "text": "Распознать голосовую команду",
+                    "blockType": "voice"
+                },
+                {
+                    "text": "Произнести текст (text)",
+                    "blockType": "voice",
+                    "inputs": ["text"]
+                }
+            ],
+            "info": []
+        },
+        "math": {
+            "color": {
+                "fill": "rgb(233, 30, 99)"
+            },
+            "numbers": [
+                {
+                    "text": "(num) + (num1)",
+                    "inputs": ["num", "num1"],
+                    "returns": "number"
+                },
+                {
+                    "text": "(num) - (num1)",
+                    "inputs": ["num", "num1"],
+                    "returns": "number"
+                },
+                {
+                    "text": "(num) * (num1)",
+                    "inputs": ["num", "num1"],
+                    "returns": "number"
+                },
+                {
+                    "text": "(num) / (num1)",
+                    "inputs": ["num", "num1"],
+                    "returns": "number"
+                },
+                {
+                    "text": "выдать случайное число от (num) до (num1)",
+                    "inputs": ["num", "num1"],
+                    "returns": "number"
+                }
+            ],
+            "logical": [
+                {
+                    "text": "(num) > (num1)?",
+                    "inputs": ["num", "num1"],
+                    "returns": "boolean"
+                },
+                {
+                    "text": "(num) < (num1)?",
+                    "inputs": ["num", "num1"],
+                    "returns": "boolean"
+                },
+                {
+                    "text": "(num) = (num1)?",
+                    "inputs": ["num", "num1"],
+                    "returns": "boolean"
+                },
+                {
+                    "text": "(str) находится (str1)?",
+                    "inputs": ["str", "str1"],
+                    "returns": "boolean"
+                },
+                {
+                    "text": "(num) И (num1)",
+                    "inputs": ["num", "num1"],
+                    "returns": "boolean"
+                },
+                {
+                    "text": "(num) ИЛИ (num1)",
+                    "inputs": ["num", "num1"],
+                    "returns": "boolean"
+                },
+                {
+                    "text": "НЕ (num)",
+                    "inputs": ["num"],
+                    "returns": "boolean"
+                }
+            ],
+            "string": [
+                {
+                    "text": "объединить (str) и (str1)",
+                    "inputs": ["str", "str1"],
+                    "returns": "string"
+                }
+            ]
+        },
+        "control": {
+            "color": {
+                "fill": "rgb(0, 188, 212)"
+            },
+            "actions": [
+                {
+                    "text": "ждать (s)",
+                    "inputs": ["s"]
+                },
+                {
+                    "text": "повторить цикл (i) раз",
+                    "inputs": ["i"],
+                    "blockType": "loop"
+                },
+                {
+                    "text": "повторять цикл всегда",
+                    "blockType": "loop"
+                },
+                {
+                    "text": "если (condition), то",
+                    "inputs": ["condition"],
+                    "blockType": "condition"
+                },
+                {
+                    "text": "если (condition), то, иначе",
+                    "inputs": ["condition"],
+                    "blockType": "ifelse"
+                },
+                {
+                    "text": "ждать до (result)",
+                    "inputs": ["result"]
+                },
+                {
+                    "text": "стоп (variable)",
+                    "inputs": ["variable"]
+                }
+            ]
+        }
+    }
+} 

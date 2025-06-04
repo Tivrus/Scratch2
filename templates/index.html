@@ -30,6 +30,9 @@
             <main class="main-content">
                 <div class="block-categories">
                     <!-- Категории будут добавлены через JavaScript -->
+                    <a href="/libraries" class="libraries-btn" id="open-libraries-btn" title="Открыть библиотеки">
+                            <img class="libraries-btn-icon" src="{{ url_for('static', filename='img/libraries.svg') }}" alt="Библиотеки">
+                    </a>
                 </div>
                 
                 <div class="blocks-palette">
@@ -81,12 +84,12 @@
                                     <div class="form-group">
                                         <label for="block-category">Категория:</label>
                                         <select id="block-category" required>
-                                            <option value="start">Запуск</option>
-                                            <option value="mouse">Управление мышью</option>
-                                            <option value="keyboard">Управление клавиатурой</option>
+                                            <option value="start">События</option>
+                                            <option value="mouse">Мышь</option>
+                                            <option value="keyboard">Клавиатура</option>
                                             <option value="vision">Компьютерное зрение</option>
                                             <option value="voice">Голосовые команды</option>
-                                            <option value="math">Мат операции</option>
+                                            <option value="math">Операторы  </option>
                                             <option value="control">Управление</option>
                                         </select>
                                     </div>

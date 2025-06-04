@@ -4,87 +4,66 @@ let BASE_Z_INDEX = 1000; // Базовый z-index для всех элемен�
 // Устанавливаем CSS-переменную для z-index
 document.documentElement.style.setProperty('--base-z-index', BASE_Z_INDEX);
 
-const blockDefinitions = {
-    start: {
-        actions: [
-            { type: "orange", text: "когда программа запущена" },
-            { type: "orange", text: "когда нажата клавиша (key)", inputs: ["key"] },
-            { type: "orange", text: "когда нажат (hotkey)", inputs: ["hotkey"] }
-        ]
-    },
-    mouse: {
-        info: [
-            { type: "blue", text: "получить координаты курсора", returns: "position" },
-            { type: "blue", text: "получить положение курсора по вертикали", returns: "y" },
-            { type: "blue", text: "получить положение курсора по горизонтали", returns: "x" },
-            { type: "blue", text: "получить цвет пикселя под курсором", returns: "color" }
-        ],
-        actions: [
-            { type: "red", text: "переместить курсор в точку (x, y)", inputs: ["x", "y"] },
-            { type: "red", text: "переместить курсор по вертикали на (y)", inputs: ["y"] },
-            { type: "red", text: "переместить курсор по горизонтали на (x)", inputs: ["x"] },
-            { type: "red", text: "плыть курсором в точку (x, y) в течении (s)", inputs: ["x", "y", "s"] },
-            { type: "red", text: "плыть курсором по вертикали на (y) в течении (s)", inputs: ["y", "s"] },
-            { type: "red", text: "плыть курсором по горизонтали на (x) в течении (s)", inputs: ["x", "s"] }
-        ]
-    },
-    keyboard: {
-        info: [
-            { type: "blue", text: "клавиша (key) зажата?", inputs: ["key"], returns: "boolean" },
-            { type: "blue", text: "клавиша (key) была нажата?", inputs: ["key"], returns: "boolean" },
-            { type: "blue", text: "был нажат (hotkey)?", inputs: ["hotkey"], returns: "boolean" }
-        ],
-        actions: [
-            { type: "red", text: "нажать на клавишу (key)", inputs: ["key"] },
-            { type: "red", text: "зажать на клавишу (key)", inputs: ["key"] },
-            { type: "red", text: "отжать клавишу (key)", inputs: ["key"] },
-            { type: "red", text: "зажать на клавишу (key) на (s)", inputs: ["key", "s"] },
-            { type: "red", text: "нажать (hotkey)", inputs: ["hotkey"] }
-        ]
-    },
-    vision: {
-        info: [],
-        actions: []
-    },
-    voice: {
-        info: [],
-        actions: []
-    },
-    math: {
-        boolean: [
-            { type: "green", blockType: "boolean", text: "(num) > (num1)?", inputs: ["num", "num1"], returns: "boolean" },
-            { type: "green", blockType: "boolean", text: "(num) < (num1)?", inputs: ["num", "num1"], returns: "boolean" },
-            { type: "green", blockType: "boolean", text: "(num) = (num1)?", inputs: ["num", "num1"], returns: "boolean" },
-            { type: "green", blockType: "boolean", text: "(str) находится (str1)?", inputs: ["str", "str1"], returns: "boolean" }
-        ],
-        numbers: [
-            { type: "green", blockType: "value", text: "(num) + (num1)", inputs: ["num", "num1"], returns: "number" },
-            { type: "green", blockType: "value", text: "(num) - (num1)", inputs: ["num", "num1"], returns: "number" },
-            { type: "green", blockType: "value", text: "(num) * (num1)", inputs: ["num", "num1"], returns: "number" },
-            { type: "green", blockType: "value", text: "(num) / (num1)", inputs: ["num", "num1"], returns: "number" },
-            { type: "green", blockType: "value", text: "выдать случайное число от (num) до (num1)", inputs: ["num", "num1"], returns: "number" }
-        ],
-        logical: [
-            { type: "green", blockType: "boolean", text: "(num) И (num1)", inputs: ["num", "num1"], returns: "boolean" },
-            { type: "green", blockType: "boolean", text: "(num) ИЛИ (num1)", inputs: ["num", "num1"], returns: "boolean" },
-            { type: "green", blockType: "boolean", text: "НЕ (num)", inputs: ["num"], returns: "boolean" }
-        ],
-        string: [
-            { type: "green", blockType: "value", text: "объединить (str) и (str1)", inputs: ["str", "str1"], returns: "string" }
-        ]
-    },
-    control: {
-        actions: [
-            { type: "red", text: "ждать (s)", inputs: ["s"] },
-            { type: "yellow", blockType: "loop", text: "повторить цикл (i) раз", inputs: ["i"] },
-            { type: "yellow", blockType: "loop", text: "повторять цикл всегда" },
-            { type: "yellow", blockType: "condition", text: "если (condition), то", inputs: ["condition"] },
-            { type: "yellow", blockType: "ifelse", text: "если (condition), то, иначе", inputs: ["condition"] },
-            { type: "red", text: "ждать до (result)", inputs: ["result"] },
-            { type: "red", text: "стоп (variable)", inputs: ["variable"] }
-        ]
+// Функция для загрузки определений блоков
+async function loadBlockDefinitions() {
+    try {
+        const response = await fetch('/static/js/blockTypes.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        // Преобразуем структуру для обратной совместимости
+        const blockDefinitions = {};
+        
+        // Для каждой категории
+        Object.entries(data.categories).forEach(([category, types]) => {
+            blockDefinitions[category] = {};
+            
+            // Для каждого типа блока в категории
+            Object.entries(types).forEach(([type, blocks]) => {
+                // Определяем цвет блока на основе типа
+                let blockColor;
+                switch(type) {
+                    case 'numbers':
+                    case 'string':
+                    case 'logical':
+                        blockColor = 'green';
+                        break;
+                    case 'actions':
+                        blockColor = 'red';
+                        break;
+                    case 'info':
+                        blockColor = 'blue';
+                        break;
+                }
+                
+                // Добавляем блоки в соответствующую секцию
+                if (blocks.length > 0) {
+                    if (type === 'numbers' || type === 'logical' || type === 'string') {
+                        if (!blockDefinitions[category].math) {
+                            blockDefinitions[category].math = {};
+                        }
+                        blockDefinitions[category].math[type] = blocks.map(block => ({
+                            ...block,
+                            type: blockColor
+                        }));
+                    } else {
+                        blockDefinitions[category][type] = blocks.map(block => ({
+                            ...block,
+                            type: blockColor
+                        }));
+                    }
+                }
+            });
+        });
+        
+        return blockDefinitions;
+    } catch (error) {
+        console.error('Error loading block definitions:', error);
+        return {};
     }
-};
+}
 
 // DOM elements
 let activeCategory = null;
@@ -101,6 +80,7 @@ let draggedBlock = null;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
 let blockChain = [];
+let blockDefinitions = {}; // Будет заполнено после загрузки
 
 // Execution variables and utilities
 let isRunning = false;
@@ -124,8 +104,11 @@ let isInitialLoad = true;
 let isUserScrolling = false;
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log("DOM loaded - starting initialization");
+    
+    // Загружаем определения блоков
+    blockDefinitions = await loadBlockDefinitions();
     
     // Инициализация основных элементов
     scriptWorkspace = document.getElementById('scripts-workspace');
@@ -254,6 +237,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize modals
     initModals();
+
+    // Обработчик для кнопки "Библиотеки" внизу панели категорий
+    const openLibrariesBtn = document.getElementById('open-libraries-btn');
+    if (openLibrariesBtn) {
+        openLibrariesBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modal = document.getElementById('libraries-modal');
+            if (modal) {
+                modal.style.display = 'block';
+            }
+        });
+    }
 });
 
 // Модифицируем функцию createCategories для добавления отладочной информации
@@ -266,37 +261,61 @@ function createCategories() {
         return;
     }
     
-    // Очищаем контейнер
+    // Сохраняем кнопку библиотек
+    const librariesBtnContainer = categoriesContainer.querySelector('.libraries-btn');
+    
+    // Очищаем контейнер, но сохраняем кнопку библиотек
     categoriesContainer.innerHTML = '';
+    if (librariesBtnContainer) {
+        categoriesContainer.appendChild(librariesBtnContainer);
+    }
+    
     console.log("Categories container cleared");
     
     // Создаем категории
     const categoryData = [
-        { id: 'start', name: 'Запуск' },
-        { id: 'mouse', name: 'Управление мышью' },
-        { id: 'keyboard', name: 'Управление клавиатурой' },
+        { id: 'start', name: 'События' },
+        { id: 'mouse', name: 'Мышь' },
+        { id: 'keyboard', name: 'Клавиатура' },
         { id: 'vision', name: 'Компьютерное зрение' },
         { id: 'voice', name: 'Голосовые команды' },
-        { id: 'math', name: 'Мат операции' },
+        { id: 'math', name: 'Операторы' },
         { id: 'control', name: 'Управление' }
     ];
     
+    // Создаем контейнер для категорий
+    const categoriesWrapper = document.createElement('div');
+    categoriesWrapper.className = 'categories-wrapper';
+    
     categoryData.forEach(cat => {
-            const categoryElement = document.createElement('div');
-            categoryElement.className = 'category';
-            categoryElement.dataset.category = cat.id;
-            categoryElement.textContent = cat.name;
-        
-        if (cat.id === 'start') {
-            categoryElement.classList.add('active');
-            console.log("Start category element created and marked as active");
-        }
-        
-        categoriesContainer.appendChild(categoryElement);
-        console.log(`Category element created: ${cat.id}`);
+        const categoryElement = document.createElement('div');
+        categoryElement.className = 'category';
+        categoryElement.dataset.category = cat.id;
+        if (cat.id === 'start') categoryElement.classList.add('active');
+
+        // Круглая иконка
+        const circle = document.createElement('span');
+        circle.className = 'category-circle';
+        // Цвет задается через CSS по data-category
+
+        // Текст
+        const label = document.createElement('span');
+        label.className = 'category-label';
+        label.textContent = cat.name;
+
+        categoryElement.appendChild(circle);
+        categoryElement.appendChild(label);
+
+        categoriesWrapper.appendChild(categoryElement);
     });
 
-    console.log("All categories created");
+    // Добавляем категории перед кнопкой библиотек
+    if (librariesBtnContainer) {
+        categoriesContainer.insertBefore(categoriesWrapper, librariesBtnContainer);
+    } else {
+        categoriesContainer.appendChild(categoriesWrapper);
+    }
+
 }
 
 // Select a category and display its blocks
@@ -341,10 +360,10 @@ function selectCategory(categoryName) {
         // Добавляем блоки для этой категории
         const categoryBlocks = blockDefinitions[category];
         if (categoryBlocks) {
-            Object.values(categoryBlocks).forEach(section => {
-                if (Array.isArray(section)) {
-                    section.forEach(block => {
-                        createBlockInPalette(block);
+            Object.entries(categoryBlocks).forEach(([type, blocks]) => {
+                if (type !== 'color' && Array.isArray(blocks)) {
+                    blocks.forEach(block => {
+                        createBlockInPalette(block, category);
                     });
                 }
             });
@@ -534,16 +553,12 @@ function setupCategoryScrollTracking() {
 }
 
 // Create a block in the palette
-function createBlockInPalette(blockData) {
+function createBlockInPalette(blockData, category) {
     // Определяем шаблон для использования
-    let templateClass = blockData.type + '-block';
-    if (blockData.blockType) {
-        templateClass += ' ' + blockData.blockType + '-block';
-    }
+    let templateClass = 'block'; // Базовый класс для всех блоков
     
     // Находим шаблон
-    const templateSelector = '.block-templates .' + templateClass;
-    const template = document.querySelector(templateSelector) || document.querySelector('.block-templates .red-block');
+    const template = document.querySelector('.block-templates .' + templateClass) || document.querySelector('.block-templates .block');
     
     if (!template) {
         console.error("Template not found for", templateClass);
@@ -566,8 +581,37 @@ function createBlockInPalette(blockData) {
         addInputsToBlock(blockClone, blockData.inputs, blockData);
     }
     
+    // Применяем цвета из JSON и вычисляем цвет обводки
+    if (category && blockDefinitions[category] && blockDefinitions[category].color) {
+        const colors = blockDefinitions[category].color;
+        const svgPath = blockClone.querySelector('.block-svg path');
+        if (svgPath) {
+            // Получаем RGB значения из строки цвета
+            const rgbMatch = colors.fill.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+            if (rgbMatch) {
+                const r = parseInt(rgbMatch[1]);
+                const g = parseInt(rgbMatch[2]);
+                const b = parseInt(rgbMatch[3]);
+                
+                // Вычисляем более темный цвет для обводки (уменьшаем яркость на 25%)
+                const darkenFactor = 0.75;
+                const strokeR = Math.round(r * darkenFactor);
+                const strokeG = Math.round(g * darkenFactor);
+                const strokeB = Math.round(b * darkenFactor);
+                
+                // Применяем цвета
+                svgPath.setAttribute('fill', colors.fill);
+                svgPath.setAttribute('stroke', `rgb(${strokeR}, ${strokeG}, ${strokeB})`);
+            } else {
+                // Если не удалось распарсить RGB, используем цвета как есть
+                svgPath.setAttribute('fill', colors.fill);
+                svgPath.setAttribute('stroke', colors.stroke);
+            }
+        }
+    }
+    
     // Store block data
-    blockClone.dataset.blockType = blockData.type;
+    blockClone.dataset.category = category;
     if (blockData.blockType) {
         blockClone.dataset.functionType = blockData.blockType;
     }
@@ -579,7 +623,7 @@ function createBlockInPalette(blockData) {
     
     // Сохраняем данные блока для клонирования
     blockClone.dataset.blockInfo = JSON.stringify({
-        type: blockData.type,
+        category: category,
         text: blockData.text,
         blockType: blockData.blockType || '',
         inputs: blockData.inputs || []
@@ -745,6 +789,15 @@ function onPaletteBlockMouseDown(e, block) {
 function createBlockInWorkspace(sourceBlock, x, y) {
     const workspace = document.querySelector('.scripts-workspace');
     const newBlock = sourceBlock.cloneNode(true);
+    
+    // Сохраняем цвета из исходного блока
+    const svgPath = newBlock.querySelector('.block-svg path');
+    const sourceSvgPath = sourceBlock.querySelector('.block-svg path');
+    if (svgPath && sourceSvgPath) {
+        // Копируем атрибуты fill и stroke напрямую
+        svgPath.setAttribute('fill', sourceSvgPath.getAttribute('fill'));
+        svgPath.setAttribute('stroke', sourceSvgPath.getAttribute('stroke'));
+    }
     
     // Устанавливаем базовые стили для блока
     newBlock.style.position = 'absolute';
@@ -2295,7 +2348,7 @@ function setupMouseVisualization() {
         if (activeButton) {
             activeButton.classList.add('pressed');
             // Добавляем эффект нажатия
-            activeButton.style.transform = 'translateY(2px) scale(0.95)';
+            activeButton.style.transform = 'scale(0.95)';
             }
         });
         
@@ -2319,7 +2372,7 @@ function setupMouseVisualization() {
         if (key) {
             key.classList.add('pressed');
             // Добавляем эффект нажатия
-            key.style.transform = 'translateY(2px) scale(0.95)';
+            key.style.transform = 'scale(0.95)';
             
             // Добавляем звук нажатия (опционально)
             const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
@@ -2341,7 +2394,7 @@ function setupMouseVisualization() {
     mouseButtons.forEach(button => {
         button.addEventListener('mouseenter', () => {
             if (!isMouseDown) {
-                button.style.transform = 'translateY(-1px) scale(1.05)';
+                button.style.transform = 'scale(1.05)';
             }
         });
         
@@ -2356,7 +2409,7 @@ function setupMouseVisualization() {
     keyboardKeys.forEach(key => {
         key.addEventListener('mouseenter', () => {
             if (!pressedKeys.has(key.dataset.key)) {
-                key.style.transform = 'translateY(-1px) scale(1.05)';
+                key.style.transform = 'scale(1.05)';
             }
         });
         
@@ -2698,21 +2751,21 @@ function createConnectionGhost(sourceBlock, targetBlock, position) {
 function isInConnectionArea(draggedBlock, targetBlock, mouseX, mouseY) {
     const targetRect = targetBlock.getBoundingClientRect();
     const draggedRect = draggedBlock.getBoundingClientRect();
-
+    
     // Определяем центральные X-координаты блоков для проверки горизонтального выравнивания
     const targetCenterX = targetRect.left + targetRect.width / 2;
     const draggedCenterX = draggedRect.left + draggedRect.width / 2;
-
+    
     // Определяем допуск для горизонтального выравнивания (например, 40% ширины целевого блока)
     const horizontalTolerance = targetRect.width * 0.4;
-
+    
     // Проверяем горизонтальное выравнивание
     const horizontallyAligned = Math.abs(targetCenterX - draggedCenterX) < horizontalTolerance;
 
     if (!horizontallyAligned) {
         return { canConnect: false, position: null };
     }
-
+    
     // Определяем вертикальную область вокруг целевого блока, где возможно соединение
     const verticalBuffer = 40; // Буфер в пикселях выше и ниже целевого блока
     const connectionZoneTop = targetRect.top - verticalBuffer;
@@ -2735,10 +2788,10 @@ function isInConnectionArea(draggedBlock, targetBlock, mouseX, mouseY) {
              // Проверяем, что целевой блок может принимать соединение сверху
             if (targetBlock.classList.contains('can-connect-top')) {
                  // Предлагаем соединение с верхом целевого блока
-                return { canConnect: true, position: 'top' };
-             }
+            return { canConnect: true, position: 'top' };
         }
-
+    }
+    
         // Если перетаскиваемый блок ниже целевого и его верхняя часть близка к низу целевого
         if (isBelowTarget && Math.abs(draggedRect.top - targetRect.bottom) < verticalBuffer + 15) {
              // Проверяем, что целевой блок может отдавать соединение снизу
@@ -2746,11 +2799,11 @@ function isInConnectionArea(draggedBlock, targetBlock, mouseX, mouseY) {
              // Здесь логичнее проверить, может ли целевой блок отдавать соединение вниз
             if (targetBlock.classList.contains('can-connect-bottom')) {
                  // Предлагаем соединение с низом целевого блока
-                return { canConnect: true, position: 'bottom' };
+            return { canConnect: true, position: 'bottom' };
              }
         }
     }
-
+    
     // Если ни одно условие не выполнено, соединение невозможно
     return { canConnect: false, position: null };
 }
